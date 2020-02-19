@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.io.*;
 import java.net.UnknownHostException;
 import javax.imageio.ImageIO;
+import javax.net.ssl.SSLSocket;
 import javax.swing.JOptionPane;
 
 public class Client
@@ -14,14 +15,28 @@ public class Client
     private String serverIP;
     private User user;
     private int port;
-    private Socket sock;
+    private SSLSocket sock;
     private DataInputStream dis;
     private DataOutputStream dos;
     private boolean loggedIn = false;
     private boolean allowingIncomingConnections = false;
     private MainUI mui;
     private IncomingStreamUI isui;
-    
+    private static final String TLS_VERSION = "TLSv1.2";
+    private static final String TRUST_STORE_NAME = "servercert.p12";
+    private static final char[] TRUST_STORE_PWD = new char[]
+    {
+        'a', 'b', 'c', '1',
+        '2', '3'
+    };
+    private static final String KEY_STORE_NAME = "servercert.p12";
+    private static final char[] KEY_STORE_PWD = new char[]
+    {
+        'a', 'b', 'c', '1',
+        '2', '3'
+    };
+
+
     // Parameterized Constructors
     public Client(User user, MainUI mui)
     {
@@ -118,13 +133,38 @@ public class Client
         return i == 1;
     }
 
-    public void connect() throws UnknownHostException, IOException
+    public void connect() throws Exception
     {
         // Connect to server
-        InetAddress ip = InetAddress.getByName(serverIP);
-        sock = new Socket(ip, port);
+        InetAddress SERVER_IP = InetAddress.getByName(serverIP);
+        SSLSocketConnector ssc = new SSLSocketConnector();
+        
+        //System.setProperty("javax.net.debug", "ssl");
+        //System.setProperty("jdk.tls.client.cipherSuites", "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384");
+        //System.setProperty("jdk.tls.server.cipherSuites", "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384");
+
+        sock = ssc.connect(
+                SERVER_IP,
+                port,
+                TLS_VERSION,
+                TRUST_STORE_NAME,
+                TRUST_STORE_PWD,
+                KEY_STORE_NAME,
+                KEY_STORE_PWD
+        );
+
         dis = new DataInputStream(sock.getInputStream());
         dos = new DataOutputStream(sock.getOutputStream());
+
+        System.out.println(
+                "\n*********** SECURE CONNECTION ESTABLISHED ***********\n"
+                + "Server IP: " + sock.getInetAddress().toString() + "\n"
+                + "Username: " + user.getUsername() + "\n"
+                + "Security Protocol: " + sock.getEnabledProtocols()[0] + "\n"
+                + "Cipher Suite: " + sock.getSession().getCipherSuite() + "\n"
+                //+ "Certificate: " + sock.getSession().getLocalCertificates()[0] + "\n"
+                + "************ END SECURE CONNECTION STATS ************\n"
+        );
     }
 
     public void disconnect() throws IOException

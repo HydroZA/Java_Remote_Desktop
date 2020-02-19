@@ -4,19 +4,36 @@ import java.io.*;
 import java.net.*;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Vector;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLSocket;
 
 public class Server
 {
 
     private String strIP;
     private int port;
-    private ServerSocket ss;
+    private SSLServerSocket ss;
     private Thread Server;
     private Connection con;
     public static Vector<User> users = new Vector<>();
     public static Vector<ClientHandler> clientHandlers = new Vector<>();
-    
+    private static final String TLS_VERSION = "TLSv1.2";
+    private static final int SERVER_COUNT = 1;
+    private static final String TRUST_STORE_NAME = "servercert.p12";
+    private static final char[] TRUST_STORE_PWD = new char[]
+    {
+        'a', 'b', 'c', '1',
+        '2', '3'
+    };
+    private static final String KEY_STORE_NAME = "servercert.p12";
+    private static final char[] KEY_STORE_PWD = new char[]
+    {
+        'a', 'b', 'c', '1',
+        '2', '3'
+    };
+
     // paramaterized constructor
     public Server(String ip, int port) throws ClassNotFoundException, SQLException
     {
@@ -437,8 +454,31 @@ public class Server
     public void startServer() throws BindException, UnknownHostException, IOException
     {
         InetAddress ip = InetAddress.getByName(getIP());
-        ss = new ServerSocket(port, 50, ip);
+        SSLServerSocketCreator tlsS = new SSLServerSocketCreator();
+        
+        //System.setProperty("javax.net.debug", "ssl");
+        //System.setProperty("jdk.tls.client.cipherSuites", "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384");
+        //System.setProperty("jdk.tls.server.cipherSuites", "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384");
+        try
+        {
+            ss = tlsS.getSecureServerSocket(
+                    ip,
+                    port,
+                    TLS_VERSION,
+                    TRUST_STORE_NAME,
+                    TRUST_STORE_PWD,
+                    KEY_STORE_NAME,
+                    KEY_STORE_PWD);
+        }
+        
+        catch (Exception e)
+        {
+            System.out.println("Failed to get SSL Server Socket");
+            e.printStackTrace();
+            return;
+        }
 
+        
         // This thread handles incoming connections, gets the users friends and then hands the client off to a ClientHandler thread
         Server = new Thread(() ->
         {
@@ -446,12 +486,15 @@ public class Server
             {
                 try
                 {
-                    Socket s = ss.accept();
+                    SSLSocket s = (SSLSocket) ss.accept();
                     
-                    System.out.println("New incoming connection: " + s);
+                    
+                    System.out.println("Incoming connection: " + s.getInetAddress().toString());
 
                     DataInputStream dis = new DataInputStream(s.getInputStream());
-                    DataOutputStream dos = new DataOutputStream(s.getOutputStream());
+                    DataOutputStream dos = new DataOutputStream(s.getOutputStream());                    
+                    
+
                     
                     Packet.Type tp = Packet.Type.values()[dis.readInt()];
 
@@ -467,6 +510,16 @@ public class Server
                             ps.setSuccess(isSuccess);
                             if (isSuccess)
                             {
+                                System.out.println(
+                                    "\n*********** SECURE CONNECTION ESTABLISHED ***********\n"
+                                  + "Client IP: " + s.getInetAddress().toString() +"\n"
+                                  + "Username: " + user.getUsername() + "\n"
+                                  + "Security Protocol: " + s.getEnabledProtocols()[0] + "\n"
+                                  + "Cipher Suite: " + s.getSession().getCipherSuite() + "\n"
+                                  //+ "Certificate: " + s.getSession().getLocalCertificates()[0] + "\n"        
+                                  + "************ END SECURE CONNECTION STATS ************\n"
+                                );
+
                                 ps.setMessage("Sucessfully logged in");
                                 ps.send(dos);
                                 String[] friends = getFriends(user);
@@ -521,10 +574,12 @@ public class Server
                 {
                     System.out.println("Socket exception in Server class");
                     e.printStackTrace();
+                    break;
                 }
                 catch (Exception e)
                 {
                     e.printStackTrace();
+                    break;
                 }
             }
         });

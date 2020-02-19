@@ -5,6 +5,7 @@
  */
 package main;
 
+import java.io.DataInputStream;
 import javax.swing.ImageIcon;
 
 /**
@@ -13,9 +14,15 @@ import javax.swing.ImageIcon;
  */
 public class IncomingStreamUI extends javax.swing.JFrame
 {
-    private 
-    public IncomingStreamUI()
+    private final MainUI mui;
+    private final String partnerName;
+    private final DataInputStream dis;
+    
+    public IncomingStreamUI(MainUI mui, PacketConnectRequest pcr)
     {
+        this.mui = mui;
+        this.partnerName = pcr.getPartner();
+        this.dis = mui.getClient().getDis();
         initComponents();
     }
 

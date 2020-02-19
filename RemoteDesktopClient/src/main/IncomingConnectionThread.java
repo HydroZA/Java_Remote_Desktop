@@ -94,7 +94,7 @@ public class IncomingConnectionThread implements Runnable
             try
             {
                 Packet.Type tp = Packet.Type.values()[dis.readInt()];
-                System.out.println(tp);
+                System.out.println("Incoming: " +tp);
                 switch (tp)
                 {
                     case STATUS:

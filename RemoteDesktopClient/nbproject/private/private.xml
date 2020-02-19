@@ -5,9 +5,8 @@
         <group>
             <file>file:/C:/Users/James%20Legge/OneDrive/University/Third%20Year/FYP/RemoteDesktopClient/src/main/Client.java</file>
             <file>file:/C:/Users/James%20Legge/OneDrive/University/Third%20Year/FYP/RemoteDesktopClient/src/main/IncomingConnectionThread.java</file>
-            <file>file:/C:/Users/James%20Legge/OneDrive/University/Third%20Year/FYP/RemoteDesktopClient/src/main/IncomingStreamUI.java</file>
-            <file>file:/C:/Users/James%20Legge/OneDrive/University/Third%20Year/FYP/RemoteDesktopClient/src/main/MainUI.java</file>
-            <file>file:/C:/Users/James%20Legge/OneDrive/University/Third%20Year/FYP/RemoteDesktopClient/src/main/OutgoingStreamUI.java</file>
+            <file>file:/C:/Users/James%20Legge/OneDrive/University/Third%20Year/FYP/RemoteDesktopClient/src/main/SSLSocketConnector.java</file>
+            <file>file:/C:/Users/James%20Legge/OneDrive/University/Third%20Year/FYP/RemoteDesktopClient/src/main/LoginUI.java</file>
         </group>
     </open-files>
 </project-private>

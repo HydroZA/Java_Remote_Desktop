@@ -173,9 +173,9 @@ public class LoginUI extends javax.swing.JFrame
             
             if (client.isLoggedIn())
             {
-                JOptionPane.showMessageDialog(this, "Logged In Successfully", "Login Attempt", INFORMATION_MESSAGE);
                 System.out.println("Login Succeeded");
-                
+                JOptionPane.showMessageDialog(this, "Logged In Successfully", "Login Attempt", INFORMATION_MESSAGE);
+                               
                 // Spawn MainUI and dispose this       
                 mui.setVisible(true);
                 this.dispose();
