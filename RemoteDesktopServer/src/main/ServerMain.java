@@ -2,66 +2,68 @@ package main;
 
 import java.io.*;
 import java.net.*;
+import java.net.UnknownHostException;
 import java.sql.SQLException;
 
 public class ServerMain
 {
+
     private static Server server;
-    
+    private static boolean serverRunning = false;
+
+    public static boolean isServerRunning()
+    {
+        return serverRunning;
+    }
+
+    public static void setServerRunning(boolean serverRunning)
+    {
+        serverRunning = serverRunning;
+    }
+
     public static void main(String[] args)
     {
-        boolean serverRunning = false;
-        
+
         // Shutdown hook. Code runs when program closed without going through normal exit procedure; ie. when closed using task manager.
         Runtime.getRuntime().addShutdownHook(new Thread()
         {
+            @Override
             public void run()
             {
                 try
                 {
                     server.killServer();
                 }
-                catch (Exception e)
+                catch (IOException | InterruptedException | SQLException e)
                 {
                     System.out.println("Abnormal Server Shutdown. Database may need to be manually updated");
                 }
             }
         });
-        
-        // get IP from args or use localhost
-        String strIP = "127.0.0.1";
-        try
-        {
-            strIP = args[0];
-        }
-        catch (IndexOutOfBoundsException e)
-        {
-            System.out.println("No IP given, using localhost");
-        }
-        
+
         // Create Server object
         try
         {
-            server = new Server(strIP, 1234);
+            server = new Server();
         }
-        catch (Exception e)
+        catch (FileNotFoundException | ClassNotFoundException | UnknownHostException | SQLException e)
         {
             System.out.println("Failed to create Server object");
         }
-        
+
         while (true)
         {
             System.out.println(
-                "\nSelect an action:\n" +
-                    "\t1) Start Server\n" +
-                    "\t2) Change IP and Port\n" +
-                    "\t3) Restart Server\n" +
-                    "\t4) Stop Server\n" +
-                    "\t5) Recreate Database\n" +
-                    "\t6) Print Active Clients\n" +
-                    "\t7) Exit\n"
+                    "\nSelect an action:\n"
+                    + "\t1) Start Server\n"
+                    + "\t2) Change IP and Port\n"
+                    + "\t3) Restart Server\n"
+                    + "\t4) Stop Server\n"
+                    + "\t5) Recreate Database\n"
+                    + "\t6) Print Active Clients\n"
+                    + "\t7) Exit\n"
             );
-            
+
             int action;
             try
             {
@@ -69,48 +71,57 @@ public class ServerMain
             }
             catch (NumberFormatException e)
             {
-                System.out.println ("Please choose a valid option");
+                System.out.println("Please choose a valid option");
                 continue;
             }
-            
+
             switch (action)
             {
-                case 1:                   
-                    try
+                case 1:
+                    if (!serverRunning)
                     {
-                        if (!serverRunning)
+                        System.out.println("Starting Server...");
+
+                        try
                         {
-                            System.out.println("Starting Server...");
                             server.startServer();
                             serverRunning = true;
-                            System.out.println("Server started on IP: " + server.getIP() + ", Port: " + server.getPort());
+                            System.out.println("Server started on IP: " + server.getSERVER_IP().getHostName() + ", Port: " + server.getSERVER_PORT());
                         }
-                        else
+                        catch (BindException | UnknownHostException e)
                         {
-                            System.out.println("Server already running!");
+                            System.out.println("Unable to bind to IP: " + server.getSERVER_IP().getHostName() + ", Port: " + server.getSERVER_PORT());
+                            System.out.println(e.getMessage());
+                        }
+                        catch (IOException e)
+                        {
+                            System.out.println("Unable to bind to IP: " + server.getSERVER_IP().getHostName() + ", Port: " + server.getSERVER_PORT());
+                            System.out.println(e.getMessage());
                         }
                     }
-                    catch (BindException e)
+                    else
                     {
-                        System.out.println("Unable to bind to IP: " + server.getIP() + ", Port: " + server.getPort());
+                        System.out.println("Server already running!");
+                    }
+
+                    break;
+                case 2:
+                    System.out.println("New IP: ");
+                    String ip = System.console().readLine();
+                    try
+                    {
+                        server.setSERVER_IP(InetAddress.getByName(ip));
                     }
                     catch (UnknownHostException e)
                     {
-                        e.printStackTrace();
+                        System.out.println("Invalid IP. Please try again");
+                        System.out.println(e.getMessage());
+                        break;
                     }
-                    catch (IOException e)
-                    {
-                        e.printStackTrace();
-                    }
-                    break;
-                case 2:
-                    System.out.println("Enter the IP");
-                    strIP = System.console().readLine();
-                    server.setIP(strIP);
 
-                    System.out.println("Enter the Port");
+                    System.out.println("New Port: ");
                     int port = Integer.parseInt(System.console().readLine());
-                    server.setPort(port);
+                    server.setSERVER_PORT(port);
 
                     System.out.println("Updated IP and Port, restart server for changes to take effect");
                     break;
@@ -122,21 +133,18 @@ public class ServerMain
                         serverRunning = false;
                         server.startServer();
                         serverRunning = true;
-                        System.out.println("Server started on IP: " + server.getIP() + ", Port: " + server.getPort());
+                        System.out.println("Server started on IP: " + server.getSERVER_IP().getHostName() + ", Port: " + server.getSERVER_PORT());
                     }
-                    catch (BindException e)
+                    catch (BindException | UnknownHostException ex)
                     {
-                        System.out.println("Unable to bind to IP: " + server.getIP() + ", Port: " + server.getPort());
+                        System.out.println("Unable to bind to IP: " + server.getSERVER_IP().getHostName() + ", Port: " + server.getSERVER_PORT());
+                        System.out.println(ex.getMessage());
                     }
-                    catch (SQLException e)
+                    catch (SQLException | IOException | InterruptedException e)
                     {
-                        System.out.println ("An SQL Exception occurred");
-                        e.printStackTrace();
+                        System.out.println(e.getMessage());
                     }
-                    catch (Exception e)
-                    {
-                        e.printStackTrace();
-                    }
+
                     break;
                 case 4:
                     try
@@ -152,9 +160,10 @@ public class ServerMain
                             System.out.println("Server is not running");
                         }
                     }
-                    catch (Exception e)
+                    catch (IOException | InterruptedException | SQLException e)
                     {
                         System.out.println("Failed to kill server");
+                        System.out.println(e.getMessage());
                     }
                     break;
                 case 5:
@@ -167,17 +176,18 @@ public class ServerMain
                     {
                         System.out.println("Recreating Database...");
                         server.clearDatabase();
+                        server.refreshDatabaseConnection();
                         server.createDatabase();
                         System.out.println("Successfully Recreated Database");
                     }
-                    catch (SQLException e)
+                    catch (SQLException | ClassNotFoundException e)
                     {
                         System.out.println("Failed to Recreate Database");
                     }
                     break;
                 case 6:
                     String[] activeUsers = server.getLoggedInUsers();
-                    
+
                     System.out.println("ACTIVE USERS:");
                     for (String user : activeUsers)
                     {
@@ -188,6 +198,7 @@ public class ServerMain
                     System.out.println("Exiting Server...");
                     System.exit(0);
                 default:
+                    System.out.println("Please choose a valid option");
                     break;
             }
         }

@@ -5,7 +5,6 @@ import java.net.*;
 
 public class ClientHandler implements Runnable
 {
-
     private User user;
     private Socket s;
     private final DataInputStream dis;

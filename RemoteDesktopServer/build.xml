@@ -72,5 +72,6 @@
     -->
 	<target name="-post-compile">
 		<copy file="certs/localhost-servercert.p12" todir="${dist.dir}/certs"/>        
+		<copy file="server.properties" todir="${dist.dir}"/>
 	</target>
 </project>

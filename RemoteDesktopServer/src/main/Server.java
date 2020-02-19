@@ -9,51 +9,34 @@ import java.util.Vector;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
 
-public class Server
+public final class Server
 {
 
-    private String strIP;
-    private int port;
     private SSLServerSocket ss;
     private Thread Server;
     private Connection con;
     public static Vector<User> users = new Vector<>();
     public static Vector<ClientHandler> clientHandlers = new Vector<>();
-    private static final String TLS_VERSION = "TLSv1.2";
-    private static final int SERVER_COUNT = 1;
-    private static final String TRUST_STORE_NAME = "servercert.p12";
-    private static final char[] TRUST_STORE_PWD = new char[]
-    {
-        'a', 'b', 'c', '1',
-        '2', '3'
-    };
-    private static final String KEY_STORE_NAME = "servercert.p12";
-    private static final char[] KEY_STORE_PWD = new char[]
-    {
-        'a', 'b', 'c', '1',
-        '2', '3'
-    };
+    private InetAddress SERVER_IP;
+    private int SERVER_PORT;
+    private final String TRUST_STORE_NAME;
+    private final char[] TRUST_STORE_PWD;
+    private final String KEY_STORE_NAME;
+    private final char[] KEY_STORE_PWD;
+    private final String TLS_VERSION = "TLSv1.2";
 
     // paramaterized constructor
-    public Server(String ip, int port) throws ClassNotFoundException, SQLException
+    public Server() throws ClassNotFoundException, SQLException, UnknownHostException, FileNotFoundException
     {
-        this.strIP = ip;
-        this.port = port;
-
-        this.con = getDatabaseConnection();
-        if (!databaseExists())
-        {
-            System.out.println("Creating Database...");
-            createDatabase();
-            System.out.println("Database Created");
-        }
-    }
-
-    // No params constructor
-    public Server() throws ClassNotFoundException, SQLException
-    {
-        this.strIP = "127.0.0.1";
-        this.port = 1234;
+        ConfigParser cp = new ConfigParser("server.properties").parse();
+        System.out.println(cp.toString());
+        
+        this.SERVER_IP = cp.getSERVER_IP();
+        this.SERVER_PORT = cp.getSERVER_PORT();
+        this.KEY_STORE_NAME = cp.getKEY_STORE_NAME();
+        this.KEY_STORE_PWD = cp.getKEY_STORE_PWD();
+        this.TRUST_STORE_NAME = cp.getTRUST_STORE_NAME();
+        this.TRUST_STORE_PWD = cp.getTRUST_STORE_PWD();
 
         this.con = getDatabaseConnection();
         if (!databaseExists())
@@ -65,33 +48,29 @@ public class Server
     }
 
     // Mutators
-    public void setIP(String ip)
+    public void setSERVER_IP(InetAddress SERVER_IP)
     {
-        this.strIP = ip;
+        this.SERVER_IP = SERVER_IP;
     }
 
-    public void setPort(int port)
+    public void setSERVER_PORT(int SERVER_PORT)
     {
-        this.port = port;
-    }
-
-    public void setIPPort(String ip, int port)
-    {
-        this.strIP = ip;
-        this.port = port;
+        this.SERVER_PORT = SERVER_PORT;
     }
 
     // Accessors
-    public String getIP()
+
+    public InetAddress getSERVER_IP()
     {
-        return strIP;
+        return SERVER_IP;
     }
 
-    public int getPort()
+    public int getSERVER_PORT()
     {
-        return port;
+        return SERVER_PORT;
     }
-
+    
+    
     // Methods
     public Connection getDatabaseConnection() throws ClassNotFoundException, SQLException
     {
@@ -102,7 +81,12 @@ public class Server
 
         return dbCon;
     }
-
+    
+    public void refreshDatabaseConnection() throws ClassNotFoundException, SQLException
+    {
+        this.con = getDatabaseConnection();
+    }
+    
     public boolean databaseExists()
     {
         try
@@ -184,6 +168,7 @@ public class Server
 
         stmtRemoveUsersTable.close();
         stmtRemoveFriendsTable.close();
+        con.close();
     }
 
     private boolean login(User user) throws SQLException, InterruptedException
@@ -450,20 +435,16 @@ public class Server
             return true;
         }
     }
-
+    
     public void startServer() throws BindException, UnknownHostException, IOException
     {
-        InetAddress ip = InetAddress.getByName(getIP());
         SSLServerSocketCreator tlsS = new SSLServerSocketCreator();
-        
-        //System.setProperty("javax.net.debug", "ssl");
-        //System.setProperty("jdk.tls.client.cipherSuites", "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384");
-        //System.setProperty("jdk.tls.server.cipherSuites", "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384");
+           
         try
         {
             ss = tlsS.getSecureServerSocket(
-                    ip,
-                    port,
+                    SERVER_IP,
+                    SERVER_PORT,
                     TLS_VERSION,
                     TRUST_STORE_NAME,
                     TRUST_STORE_PWD,
@@ -477,7 +458,7 @@ public class Server
             e.printStackTrace();
             return;
         }
-
+        
         
         // This thread handles incoming connections, gets the users friends and then hands the client off to a ClientHandler thread
         Server = new Thread(() ->
@@ -573,12 +554,14 @@ public class Server
                 catch (SocketException e)
                 {
                     System.out.println("Socket exception in Server class");
-                    e.printStackTrace();
+                    ServerMain.setServerRunning(false);
+                    e.getMessage();
                     break;
                 }
                 catch (Exception e)
                 {
-                    e.printStackTrace();
+                    ServerMain.setServerRunning(false);
+                    e.getMessage();
                     break;
                 }
             }
