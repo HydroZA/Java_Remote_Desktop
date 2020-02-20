@@ -4,15 +4,16 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.net.InetAddress;
 import java.io.*;
+import java.net.UnknownHostException;
 import javax.imageio.ImageIO;
 import javax.net.ssl.SSLSocket;
 import javax.swing.JOptionPane;
 
 public class Client
 {
-    private String serverIP;
-    private User user;
-    private int port;
+    private InetAddress SERVER_IP;
+    private int SERVER_PORT;
+    private User user; 
     private SSLSocket sock;
     private DataInputStream dis;
     private DataOutputStream dos;
@@ -20,37 +21,56 @@ public class Client
     private boolean allowingIncomingConnections = false;
     private MainUI mui;
     private IncomingStreamUI isui;
-    private static final String TLS_VERSION = "TLSv1.2";
-    private static final String TRUST_STORE_NAME = "servercert.p12";
-    private static final char[] TRUST_STORE_PWD = new char[]
-    {
-        'a', 'b', 'c', '1',
-        '2', '3'
-    };
-    private static final String KEY_STORE_NAME = "servercert.p12";
-    private static final char[] KEY_STORE_PWD = new char[]
-    {
-        'a', 'b', 'c', '1',
-        '2', '3'
-    };
+    private IncomingConnectionThread ict;
 
-
+    public void setIct(IncomingConnectionThread ict)
+    {
+        this.ict = ict;
+    }
+    private final String TLS_VERSION = "TLSv1.2";
+    private final String TRUST_STORE_NAME;
+    private final char[] TRUST_STORE_PWD;
+    private final String KEY_STORE_NAME;
+    private final char[] KEY_STORE_PWD;
+    
     // Parameterized Constructors
-    public Client(User user, MainUI mui)
+    public Client(User user, MainUI mui) throws FileNotFoundException, UnknownHostException
     {
         this.user = user;
         this.mui = mui;
+
+        ConfigParser cp = new ConfigParser("client.properties").parse();
+        this.SERVER_IP = cp.getSERVER_IP();
+        this.SERVER_PORT = cp.getSERVER_PORT();
+        this.KEY_STORE_NAME = cp.getKEY_STORE_NAME();
+        this.KEY_STORE_PWD = cp.getKEY_STORE_PWD();
+        this.TRUST_STORE_NAME = cp.getTRUST_STORE_NAME();
+        this.TRUST_STORE_PWD = cp.getTRUST_STORE_PWD();
     }
 
-    public Client(User user)
+    public Client(User user) throws FileNotFoundException, UnknownHostException
     {
         this.user = user;
+
+        ConfigParser cp = new ConfigParser("client.properties").parse();
+        this.SERVER_IP = cp.getSERVER_IP();
+        this.SERVER_PORT = cp.getSERVER_PORT();
+        this.KEY_STORE_NAME = cp.getKEY_STORE_NAME();
+        this.KEY_STORE_PWD = cp.getKEY_STORE_PWD();
+        this.TRUST_STORE_NAME = cp.getTRUST_STORE_NAME();
+        this.TRUST_STORE_PWD = cp.getTRUST_STORE_PWD();
     }
 
     // No-Params Constructor
-    public Client()
+    public Client() throws FileNotFoundException, UnknownHostException
     {
-
+        ConfigParser cp = new ConfigParser("client.properties").parse();
+        this.SERVER_IP = cp.getSERVER_IP();
+        this.SERVER_PORT = cp.getSERVER_PORT();
+        this.KEY_STORE_NAME = cp.getKEY_STORE_NAME();
+        this.KEY_STORE_PWD = cp.getKEY_STORE_PWD();
+        this.TRUST_STORE_NAME = cp.getTRUST_STORE_NAME();
+        this.TRUST_STORE_PWD = cp.getTRUST_STORE_PWD();
     }
 
     public boolean isAllowingIncomingConnections()
@@ -84,14 +104,14 @@ public class Client
     }
 
     // Mutators
-    public void setServerIP(String serverIP)
+    public void setServerIP(InetAddress serverIP)
     {
-        this.serverIP = serverIP;
+        this.SERVER_IP = serverIP;
     }
 
     public void setPort(int port)
     {
-        this.port = port;
+        this.SERVER_PORT = port;
     }
 
     public void setUser(User user)
@@ -100,14 +120,14 @@ public class Client
     }
 
     // Accessors
-    public String getServerIP()
+    public InetAddress getServerIP()
     {
-        return this.serverIP;
+        return this.SERVER_IP;
     }
 
     public int getServerPort()
     {
-        return this.port;
+        return this.SERVER_PORT;
     }
 
     public User getUser()
@@ -134,16 +154,14 @@ public class Client
     public void connect() throws Exception
     {
         // Connect to server
-        InetAddress SERVER_IP = InetAddress.getByName(serverIP);
         SSLSocketConnector ssc = new SSLSocketConnector();
         
         //System.setProperty("javax.net.debug", "ssl");
         //System.setProperty("jdk.tls.client.cipherSuites", "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384");
         //System.setProperty("jdk.tls.server.cipherSuites", "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384");
 
-        sock = ssc.connect(
-                SERVER_IP,
-                port,
+        sock = ssc.connect(SERVER_IP,
+                SERVER_PORT,
                 TLS_VERSION,
                 TRUST_STORE_NAME,
                 TRUST_STORE_PWD,
@@ -214,10 +232,11 @@ public class Client
     public void streamRequestAccepted(PacketConnectRequest pcr)
     {
         // Do stuff if the stream is accepted
-        JOptionPane.showMessageDialog(mui, "Your Stream Request was Granted");
+        //JOptionPane.showMessageDialog(mui, "Your Stream Request was Granted");
         
-        IncomingStreamUI isui = new IncomingStreamUI(mui, pcr);
+        isui = new IncomingStreamUI(mui, pcr);
         isui.setVisible(true);
+        ict.setIsui(isui);
         this.mui.setVisible(false);
     }
 

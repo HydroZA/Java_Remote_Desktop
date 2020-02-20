@@ -70,7 +70,8 @@
     nbproject/build-impl.xml file. 
 
     -->
-		<target name="-post-compile">
-		<copy file="certs/localhost-clientcert.p12" todir="${dist.dir}/certs"/>        
+	<target name="-post-compile">
+		<copy file="certs/localhost-clientcert.p12" todir="${dist.dir}/certs"/>  
+		<copy file="client.properties" todir="${dist.dir}"/>		
 	</target>
 </project>

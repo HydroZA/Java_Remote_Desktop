@@ -61,6 +61,7 @@ public class PacketFrame extends Packet<PacketFrame>
     public PacketFrame deserialize(DataInputStream dis) throws IOException
     {
         this.size = dis.readInt();
+        frame = new byte[size];
         dis.readFully(frame, 0, size);
         return this;
     }

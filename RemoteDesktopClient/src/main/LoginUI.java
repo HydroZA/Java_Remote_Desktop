@@ -5,6 +5,8 @@
  */
 package main;
 
+import java.io.FileNotFoundException;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -27,8 +29,18 @@ public class LoginUI extends javax.swing.JFrame
     public LoginUI()
     {
         initComponents();
+        this.setLocationRelativeTo(null);
         this.getRootPane().setDefaultButton(btnLogin);
-        client = new Client();    
+        
+        try  
+        {
+            client = new Client();
+        }
+        catch (FileNotFoundException | UnknownHostException ex)
+        {
+            System.out.println("Unable to create Client object");
+        }
+        
     }
 
     @SuppressWarnings("unchecked")
@@ -146,8 +158,6 @@ public class LoginUI extends javax.swing.JFrame
                 
         User user = new User (username, password);
         client.setUser(user);
-        client.setServerIP("127.0.0.1");
-        client.setPort(1234);
 
         try
         {
@@ -156,6 +166,8 @@ public class LoginUI extends javax.swing.JFrame
             IncomingConnectionThread ict = new IncomingConnectionThread(client.getDis(), this);
             Thread t = new Thread(ict);
             ict.setClient(client);
+            client.setIct(ict);
+            
             
             MainUI mui = new MainUI(user, client);
             ict.setMainUI(mui);
@@ -233,16 +245,12 @@ public class LoginUI extends javax.swing.JFrame
         }
         //</editor-fold>
         
-        
-        
-        
+       
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable()
+        java.awt.EventQueue.invokeLater(() ->
         {
-            public void run()
-            {
-                new LoginUI().setVisible(true);
-            }
+            new LoginUI().setVisible(true);
+            
         });
     }
 

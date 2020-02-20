@@ -79,6 +79,7 @@ public class OutgoingStreamUI extends javax.swing.JFrame
                 catch (IOException e)
                 {
                     System.out.println("IOException while attempting to send a frame");
+                    e.printStackTrace();
                     terminated = true;
                 }
                 catch (AWTException ex)

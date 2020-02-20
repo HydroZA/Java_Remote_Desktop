@@ -21,6 +21,7 @@ public class MainUI extends javax.swing.JFrame
     public MainUI(User user, Client client)
     {
         initComponents();
+        this.setLocationRelativeTo(null);
         
         this.user = user;
         this.client = client;

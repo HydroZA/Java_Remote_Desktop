@@ -15,6 +15,8 @@ public class IncomingConnectionThread implements Runnable
     private final DataInputStream dis;
     private MainUI mui;
     private LoginUI lui;
+    private IncomingStreamUI isui;
+    private OutgoingStreamUI osui;
     private Client client;
     private Thread LoginThread;
 
@@ -94,7 +96,7 @@ public class IncomingConnectionThread implements Runnable
             try
             {
                 Packet.Type tp = Packet.Type.values()[dis.readInt()];
-                System.out.println("Incoming: " +tp);
+              //  System.out.println("Incoming: " +tp);
                 switch (tp)
                 {
                     case STATUS:
@@ -148,26 +150,35 @@ public class IncomingConnectionThread implements Runnable
                         {
                             if (client.isAllowingIncomingConnections())
                             {
-                                String requester = pc.getRequester();                             
-                                boolean isAccepted = intToBoolean(JOptionPane.showOptionDialog(mui, "\'" + requester + "\' has requested to connect, do you accept?", "INCOMING CONNECTION", YES_NO_OPTION, QUESTION_MESSAGE, null, null, null), 0);                               
+                                String requester = pc.getRequester();
+                                boolean isAccepted = intToBoolean(JOptionPane.showOptionDialog(mui, "\'" + requester + "\' has requested to connect, do you accept?", "INCOMING CONNECTION", YES_NO_OPTION, QUESTION_MESSAGE, null, null, null), 0);
+
+                                if (isAccepted)
+                                {
+                                    mui.setVisible(false);
+                                    osui = new OutgoingStreamUI(mui, pc);
+                                    osui.setVisible(true);
+                                }
                                 pc.setAccepted(isAccepted);
-                                pc.setStatus(PacketConnectRequest.Status.ASSIGNED);
-                                pc.send(client.getDos());
                             }
                             else
                             {
                                 pc.setAccepted(false);
-                                pc.setStatus(PacketConnectRequest.Status.ASSIGNED);
-                                pc.send(client.getDos());
                             }
+                            
+                            pc.setStatus(PacketConnectRequest.Status.ASSIGNED);
+                            pc.send(client.getDos());
                         }
                         break;
                     }
                     case FRAME:
                     {
-                        PacketFrame pf = new PacketFrame().deserialize(dis);
-                        byte[] frame = pf.getFrame();
-                        
+                        if (isui.isVisible())
+                        {
+                            PacketFrame pf = new PacketFrame().deserialize(dis);
+                            byte[] frame = pf.getFrame();
+                            isui.updateFrame(frame);
+                        }
                     }
                 }
             }
@@ -181,6 +192,16 @@ public class IncomingConnectionThread implements Runnable
             }
         }
         System.out.println("IncomingConnectionThread Terminated");
+    }
+
+    public IncomingStreamUI getIsui()
+    {
+        return isui;
+    }
+
+    public void setIsui(IncomingStreamUI isui)
+    {
+        this.isui = isui;
     }
 
     public LoginUI getLui()

@@ -95,26 +95,29 @@ public class ClientHandler implements Runnable
                     case CONNECT_REQUEST:
                     {
                         PacketConnectRequest pc = new PacketConnectRequest().deserialize(dis);
-                        String partner = pc.getPartner();
+                        String partnerUsername = pc.getPartner();
                         String requester = pc.getRequester();
-
+                        
+                        // if we are the initiator -> send our request to the partner
                         if (requester.equals(user.getUsername()))
                         {
                             for (ClientHandler ch : Server.clientHandlers)
                             {
-                                if (ch.getUser().getUsername().equals(partner))
+                                if (ch.getUser().getUsername().equals(partnerUsername))
                                 {
-                                    this.partner = ch;
+                                    
                                     pc.send(ch.dos);
                                 }
                             }
                         }
+                        // We are the relay responder -> send our reply the requester
                         else
                         {
                             for (ClientHandler ch : Server.clientHandlers)
                             {
                                 if (ch.getUser().getUsername().equals(requester))
                                 {
+                                    this.partner = ch;
                                     pc.send(ch.dos);
                                 }
                             }
@@ -124,7 +127,10 @@ public class ClientHandler implements Runnable
                     case FRAME:
                     {
                         PacketFrame pf = new PacketFrame().deserialize(dis);
+                        System.out.println(partner.getUser().getUsername());
                         pf.send(partner.dos);
+                        System.out.println("sent a frame");
+                        break;
                     }
 
                     case LOGOUT:
@@ -134,6 +140,9 @@ public class ClientHandler implements Runnable
                         terminated = true;
                         break;
                     }
+                    
+                    default:
+                        System.out.println("well there's ur problem lmao");
                 }
             }
 

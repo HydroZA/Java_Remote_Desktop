@@ -5,6 +5,7 @@
  */
 package main;
 
+import java.awt.Image;
 import java.io.DataInputStream;
 import javax.swing.ImageIcon;
 
@@ -23,15 +24,19 @@ public class IncomingStreamUI extends javax.swing.JFrame
         this.mui = mui;
         this.partnerName = pcr.getPartner();
         this.dis = mui.getClient().getDis();
+        
         initComponents();
     }
 
-    public void startUpdateUI(byte[] frame)
+    public void updateFrame(byte[] frame)
     {
         Thread UpdateUI = new Thread(() ->
         {
-            ImageIcon ic = new ImageIcon(frame);
-            lblFrameViewer.setIcon(ic);
+            // Resize to fit window and display
+            lblFrameViewer.setIcon(new ImageIcon(
+                    new ImageIcon(frame)
+                            .getImage()
+                                .getScaledInstance(lblFrameViewer.getWidth(), lblFrameViewer.getHeight(), Image.SCALE_DEFAULT)));
         });
         UpdateUI.start();
     }
@@ -44,11 +49,23 @@ public class IncomingStreamUI extends javax.swing.JFrame
         lblFrameViewer = new javax.swing.JLabel();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
+        mnuDisconnect = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
         jMenu1.setText("File");
+
+        mnuDisconnect.setText("Disconnect");
+        mnuDisconnect.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                mnuDisconnectActionPerformed(evt);
+            }
+        });
+        jMenu1.add(mnuDisconnect);
+
         jMenuBar1.add(jMenu1);
 
         jMenu2.setText("Edit");
@@ -62,19 +79,24 @@ public class IncomingStreamUI extends javax.swing.JFrame
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(lblFrameViewer, javax.swing.GroupLayout.DEFAULT_SIZE, 388, Short.MAX_VALUE)
+                .addComponent(lblFrameViewer, javax.swing.GroupLayout.DEFAULT_SIZE, 854, Short.MAX_VALUE)
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(lblFrameViewer, javax.swing.GroupLayout.DEFAULT_SIZE, 265, Short.MAX_VALUE)
+                .addComponent(lblFrameViewer, javax.swing.GroupLayout.DEFAULT_SIZE, 554, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void mnuDisconnectActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_mnuDisconnectActionPerformed
+    {//GEN-HEADEREND:event_mnuDisconnectActionPerformed
+        
+    }//GEN-LAST:event_mnuDisconnectActionPerformed
 
     /**
      * @param args the command line arguments
@@ -85,5 +107,6 @@ public class IncomingStreamUI extends javax.swing.JFrame
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JLabel lblFrameViewer;
+    private javax.swing.JMenuItem mnuDisconnect;
     // End of variables declaration//GEN-END:variables
 }
