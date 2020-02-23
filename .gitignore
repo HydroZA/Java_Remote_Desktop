@@ -1,2 +1,2 @@
-RemoteDesktopServer/build
-RemoteDesktopClient/build
+RemoteDesktopServer/build/*
+RemoteDesktopClient/build/*
