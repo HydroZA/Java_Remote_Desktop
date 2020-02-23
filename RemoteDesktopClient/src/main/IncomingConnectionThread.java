@@ -95,8 +95,14 @@ public class IncomingConnectionThread implements Runnable
         {
             try
             {
-                Packet.Type tp = Packet.Type.values()[dis.readInt()];
-              //  System.out.println("Incoming: " +tp);
+                int i = dis.readInt();
+                if (i > 100)
+                {
+                    // we must have received something erroneously for the action to be this high 
+                    continue;
+                }
+                
+                Packet.Type tp = Packet.Type.values()[i];
                 switch (tp)
                 {
                     case STATUS:
@@ -158,6 +164,7 @@ public class IncomingConnectionThread implements Runnable
                                     mui.setVisible(false);
                                     osui = new OutgoingStreamUI(mui, pc);
                                     osui.setVisible(true);
+                                    client.setOsui(osui);
                                 }
                                 pc.setAccepted(isAccepted);
                             }
@@ -179,6 +186,27 @@ public class IncomingConnectionThread implements Runnable
                             byte[] frame = pf.getFrame();
                             isui.updateFrame(frame);
                         }
+                        break;
+                    }
+                    case STOP_STREAMING:
+                    {
+                        try
+                        {
+                            if (osui.isVisible())
+                            {
+                                client.resetToMainUI();
+                            }
+                        }
+
+                        catch (NullPointerException e)
+                        {
+                            if (isui.isVisible())
+                            {
+                                client.resetToMainUI();
+                            }
+                        }
+
+                        break;
                     }
                 }
             }

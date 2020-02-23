@@ -41,13 +41,6 @@ public class OutgoingStreamUI extends javax.swing.JFrame
         startUpdateUI();
     }
 
-    private void endStream()
-    {
-        terminated = true;
-        mui.setVisible(true);
-        this.dispose();
-    }
-    
     private void startUpdateUI()
     {
         Thread UpdateUI = new Thread(() ->
@@ -76,22 +69,53 @@ public class OutgoingStreamUI extends javax.swing.JFrame
                     
                     frames++;
                 }
-                catch (IOException e)
+                catch (IOException | AWTException e)
                 {
-                    System.out.println("IOException while attempting to send a frame");
-                    e.printStackTrace();
-                    terminated = true;
-                }
-                catch (AWTException ex)
-                {
-                    System.out.println("AWTException while attempting to send a frame");
+                    System.out.println("Stream Closed");
                     terminated = true;
                 }
             }
-            endStream();
             sw.stop();
+            printStreamStats();
+            endStream();
         });
         SendFrames.start();
+    }
+
+    public boolean isTerminated()
+    {
+        return terminated;
+    }
+    
+    private void endStream()
+    {
+        try
+        {
+            client.stopStream();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+        client.resetToMainUI();
+    }
+
+    public void setTerminated(boolean terminated)
+    {
+        this.terminated = terminated;
+    }
+
+    public String printStreamStats()
+    {
+        long time = sw.getTime(TimeUnit.SECONDS);
+        long fps = frames / time;
+
+        return(
+                "*********** STREAM STATS ***********\n"
+                + "Total Frames Sent: " + frames + "\n"
+                + "Elapsed Time: " + time + " Seconds\n"
+                + "Average Frame Rate: " + fps + " FPS\n"
+                + "*********** END STREAM STATS ***********");
     }
 
     /**
@@ -188,16 +212,7 @@ public class OutgoingStreamUI extends javax.swing.JFrame
     private void btnEndStreamActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnEndStreamActionPerformed
     {//GEN-HEADEREND:event_btnEndStreamActionPerformed
         terminated = true;
-        long time = sw.getTime(TimeUnit.SECONDS);
-        long fps = frames/time;
-        
-        System.out.println(
-                  "*********** STREAM STATS ***********\n"
-                + "Total Frames Sent: " + frames + "\n"
-                + "Elapsed Time: " + time + " Seconds\n"
-                + "Average Frame Rate: " + fps + " FPS\n"
-                + "*********** END STREAM STATS ***********");
-        
+        printStreamStats();
         endStream();
     }//GEN-LAST:event_btnEndStreamActionPerformed
 

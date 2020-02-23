@@ -7,39 +7,52 @@ import java.io.*;
 import java.net.UnknownHostException;
 import javax.imageio.ImageIO;
 import javax.net.ssl.SSLSocket;
-import javax.swing.JOptionPane;
 
 public class Client
 {
-    private InetAddress SERVER_IP;
-    private int SERVER_PORT;
-    private User user; 
-    private SSLSocket sock;
-    private DataInputStream dis;
-    private DataOutputStream dos;
-    private boolean loggedIn = false;
-    private boolean allowingIncomingConnections = false;
+
+    // Parent UI's
     private MainUI mui;
     private IncomingStreamUI isui;
+    private OutgoingStreamUI osui;
     private IncomingConnectionThread ict;
 
-    public void setIct(IncomingConnectionThread ict)
-    {
-        this.ict = ict;
-    }
+    // SSL Server Vars
+    private SSLSocket sock;
+    private InetAddress SERVER_IP;
+    private int SERVER_PORT;
     private final String TLS_VERSION = "TLSv1.2";
     private final String TRUST_STORE_NAME;
     private final char[] TRUST_STORE_PWD;
     private final String KEY_STORE_NAME;
     private final char[] KEY_STORE_PWD;
-    
+    private DataInputStream dis;
+    private DataOutputStream dos;
+
+    // Misc Vars
+    private User user;
+    private boolean loggedIn = false;
+    private boolean allowingIncomingConnections = false;
+
     // Parameterized Constructors
-    public Client(User user, MainUI mui) throws FileNotFoundException, UnknownHostException
+    public Client(User user, MainUI mui) throws UnknownHostException, FileNotFoundException
     {
         this.user = user;
         this.mui = mui;
 
-        ConfigParser cp = new ConfigParser("client.properties").parse();
+        ConfigParser cp;
+        try
+        {
+            System.out.println("Found Config File");
+            cp = new ConfigParser("client.properties").parse();
+        }
+        catch (FileNotFoundException e)
+        {
+            System.out.println("Creating Config File...");
+            File conf = createConfigFile();
+            cp = new ConfigParser(conf.getAbsolutePath()).parse();
+            System.out.println("Created Config File");
+        }
         this.SERVER_IP = cp.getSERVER_IP();
         this.SERVER_PORT = cp.getSERVER_PORT();
         this.KEY_STORE_NAME = cp.getKEY_STORE_NAME();
@@ -52,7 +65,19 @@ public class Client
     {
         this.user = user;
 
-        ConfigParser cp = new ConfigParser("client.properties").parse();
+                ConfigParser cp;
+        try
+        {
+            System.out.println("Found Config File");
+            cp = new ConfigParser("client.properties").parse();
+        }
+        catch (FileNotFoundException e)
+        {
+            System.out.println("Creating Config File...");
+            File conf = createConfigFile();
+            cp = new ConfigParser(conf.getAbsolutePath()).parse();
+            System.out.println("Created Config File");
+        }
         this.SERVER_IP = cp.getSERVER_IP();
         this.SERVER_PORT = cp.getSERVER_PORT();
         this.KEY_STORE_NAME = cp.getKEY_STORE_NAME();
@@ -64,7 +89,19 @@ public class Client
     // No-Params Constructor
     public Client() throws FileNotFoundException, UnknownHostException
     {
-        ConfigParser cp = new ConfigParser("client.properties").parse();
+        ConfigParser cp;
+        try
+        {
+            cp = new ConfigParser("client.properties").parse();
+            System.out.println("Found Config File");
+        }
+        catch (FileNotFoundException e)
+        {
+            System.out.println("Creating Config File...");
+            File conf = createConfigFile();
+            cp = new ConfigParser(conf.getAbsolutePath()).parse();
+            System.out.println("Created Config File");
+        }
         this.SERVER_IP = cp.getSERVER_IP();
         this.SERVER_PORT = cp.getSERVER_PORT();
         this.KEY_STORE_NAME = cp.getKEY_STORE_NAME();
@@ -119,6 +156,11 @@ public class Client
         this.user = user;
     }
 
+    public void setIct(IncomingConnectionThread ict)
+    {
+        this.ict = ict;
+    }
+
     // Accessors
     public InetAddress getServerIP()
     {
@@ -145,21 +187,11 @@ public class Client
         return this.dos;
     }
 
-    // Private Methods
-    private boolean intToBoolean(int i)
-    {
-        return i == 1;
-    }
-
     public void connect() throws Exception
     {
         // Connect to server
         SSLSocketConnector ssc = new SSLSocketConnector();
         
-        //System.setProperty("javax.net.debug", "ssl");
-        //System.setProperty("jdk.tls.client.cipherSuites", "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384");
-        //System.setProperty("jdk.tls.server.cipherSuites", "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384");
-
         sock = ssc.connect(SERVER_IP,
                 SERVER_PORT,
                 TLS_VERSION,
@@ -182,13 +214,41 @@ public class Client
                 + "************ END SECURE CONNECTION STATS ************\n"
         );
     }
+    
+    
+    private File createConfigFile()
+    {
+        File conf = new File("client.properties");
+        try
+        {
+            BufferedWriter bw = new BufferedWriter(new FileWriter(conf));
+            bw.write(
+                              "#\n"
+                            + "# Config File for Java_Remote_Desktop\n"
+                            + "# DO NOT EDIT UNLESS YOU KNOW WHAT YOU ARE DOING\n"
+                            + "#\n"
+                            + "SERVER_IP:127.0.0.1\n"
+                            + "SERVER_PORT:1234\n"
+                            + "TRUST_STORE_NAME:certs/localhost-clientcert.p12\n"
+                            + "TRUST_STORE_PWD:abc123\n"
+                            + "KEY_STORE_NAME:certs/localhost-clientcert.p12\n"
+                            + "KEY_STORE_PWD:abc123\n"
+                            + "#TLS_VERSION:TLSv1.2"
+            );
+            bw.close();
+        }
+        catch (IOException e)
+        {
+            return null;
+        }
+        return conf;
+    }
 
     public void disconnect() throws IOException
     {
         sock.close();
     }
 
-    // Public Methods
     public void login() throws IOException
     {
         PacketLogin pl = new PacketLogin(this.user.getUsername(), this.user.getPassword());
@@ -229,24 +289,45 @@ public class Client
         pc.send(dos);
     }
 
+    public OutgoingStreamUI getOsui()
+    {
+        return osui;
+    }
+
+    public void setOsui(OutgoingStreamUI osui)
+    {
+        this.osui = osui;
+    }
+
+    public void stopStream() throws IOException
+    {
+        PacketStopStreaming pss = new PacketStopStreaming();
+        pss.sendOnlyType(dos);
+    }
+
+    public void resetToMainUI()
+    {
+        if (osui.isVisible())
+        {
+            osui.setTerminated(true);
+            osui.dispose();
+            mui.setVisible(true);
+        }
+        else if (isui.isVisible())
+        {
+            isui.dispose();
+            mui.setVisible(true);
+        }
+    }
+
     public void streamRequestAccepted(PacketConnectRequest pcr)
     {
         // Do stuff if the stream is accepted
         //JOptionPane.showMessageDialog(mui, "Your Stream Request was Granted");
-        
+
         isui = new IncomingStreamUI(mui, pcr);
         isui.setVisible(true);
         ict.setIsui(isui);
         this.mui.setVisible(false);
-    }
-
-    public void incomingFrame(byte[] frame)
-    {
-        
-    }
-    
-    public void startOutgoingConnection(String streamPartner) throws IOException
-    {
-
     }
 }

@@ -4,17 +4,15 @@ import java.io.*;
 import java.net.*;
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Vector;
 import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLSocket;
 
 public final class Server
 {
 
     private SSLServerSocket ss;
-    private Thread Server;
     private Connection con;
+    private LoginServer ls;
     public static Vector<User> users = new Vector<>();
     public static Vector<ClientHandler> clientHandlers = new Vector<>();
     private InetAddress SERVER_IP;
@@ -28,9 +26,20 @@ public final class Server
     // paramaterized constructor
     public Server() throws ClassNotFoundException, SQLException, UnknownHostException, FileNotFoundException
     {
-        ConfigParser cp = new ConfigParser("server.properties").parse();
-        System.out.println(cp.toString());
-        
+        ConfigParser cp;
+        try
+        {
+            cp = new ConfigParser("server.properties").parse();
+            System.out.println("Found Config File");
+        }
+        catch (FileNotFoundException e)
+        {
+            System.out.println("Creating Config File...");
+            File conf = createConfigFile();
+            cp = new ConfigParser(conf.getAbsolutePath()).parse();
+            System.out.println("Created Config File");
+        }
+
         this.SERVER_IP = cp.getSERVER_IP();
         this.SERVER_PORT = cp.getSERVER_PORT();
         this.KEY_STORE_NAME = cp.getKEY_STORE_NAME();
@@ -171,7 +180,7 @@ public final class Server
         con.close();
     }
 
-    private boolean login(User user) throws SQLException, InterruptedException
+    public boolean login(User user) throws SQLException, InterruptedException
     {
         String query = "SELECT 1 FROM USERS WHERE EXISTS (SELECT * FROM USERS WHERE username=\'" + user.getUsername() + "\' AND pword=\'" + user.getPassword() + "\');";
         PreparedStatement stmt = con.prepareStatement(query);
@@ -221,7 +230,33 @@ public final class Server
             return false;
         }
     }
-
+    private File createConfigFile()
+    {
+        File conf = new File("server.properties");
+        try
+        {
+            BufferedWriter bw = new BufferedWriter(new FileWriter(conf));
+            bw.write(
+                              "#\n"
+                            + "# Config File for Java_Remote_Desktop\n"
+                            + "# DO NOT EDIT UNLESS YOU KNOW WHAT YOU ARE DOING\n"
+                            + "#\n"
+                            + "SERVER_IP:127.0.0.1\n"
+                            + "SERVER_PORT:1234\n"
+                            + "TRUST_STORE_NAME:certs/localhost-servercert.p12\n"
+                            + "TRUST_STORE_PWD:abc123\n"
+                            + "KEY_STORE_NAME:certs/localhost-servercert.p12\n"
+                            + "KEY_STORE_PWD:abc123\n"
+                            + "#TLS_VERSION:TLSv1.2"
+            );
+            bw.close();
+        }
+        catch (IOException e)
+        {
+            return null;
+        }
+        return conf;
+    }
     public void logout(User user) throws SQLException, InterruptedException
     {
         // Update DB to show logged out user
@@ -239,7 +274,9 @@ public final class Server
         {
             if (ch.getUser().getUsername().equals(user.getUsername()))
             {
+                ch.getThisThread().stop();
                 clientHandlers.remove(ch);
+                
                 break;
             }
         }
@@ -259,7 +296,7 @@ public final class Server
         
         return usernames;
     }
-    private void logoutAllUsers() throws SQLException, InterruptedException
+    public void logoutAllUsers() throws SQLException, InterruptedException
     {
         for (User ch : users)
         {
@@ -269,7 +306,7 @@ public final class Server
         clientHandlers.clear();
     }
 
-    private boolean register(User user)
+    public boolean register(User user)
     {
         // add user to DB
         return false;
@@ -318,9 +355,13 @@ public final class Server
 
     public void killServer() throws IOException, SQLException, InterruptedException
     {
-        Server.stop();
-        ss.close();
-
+        try
+        {
+            ls.getThisThread().stop();
+            ss.close();
+        }
+        catch (NullPointerException e) {}
+                       
         // logout all users
         logoutAllUsers();
 
@@ -458,114 +499,12 @@ public final class Server
             e.printStackTrace();
             return;
         }
-        
-        
+       
         // This thread handles incoming connections, gets the users friends and then hands the client off to a ClientHandler thread
-        Server = new Thread(() ->
-        {
-            while (true)
-            {
-                try
-                {
-                    SSLSocket s = (SSLSocket) ss.accept();
-                    
-                    
-                    System.out.println("Incoming connection: " + s.getInetAddress().toString());
-
-                    DataInputStream dis = new DataInputStream(s.getInputStream());
-                    DataOutputStream dos = new DataOutputStream(s.getOutputStream());                    
-                    
-
-                    
-                    Packet.Type tp = Packet.Type.values()[dis.readInt()];
-
-                    switch (tp)
-                    {
-                        case LOGIN:
-                        {
-                            PacketLogin pl = new PacketLogin().deserialize(dis);
-                            User user = pl.getUser();
-
-                            boolean isSuccess = login(user);
-                            PacketStatus ps = new PacketStatus();
-                            ps.setSuccess(isSuccess);
-                            if (isSuccess)
-                            {
-                                System.out.println(
-                                    "\n*********** SECURE CONNECTION ESTABLISHED ***********\n"
-                                  + "Client IP: " + s.getInetAddress().toString() +"\n"
-                                  + "Username: " + user.getUsername() + "\n"
-                                  + "Security Protocol: " + s.getEnabledProtocols()[0] + "\n"
-                                  + "Cipher Suite: " + s.getSession().getCipherSuite() + "\n"
-                                  //+ "Certificate: " + s.getSession().getLocalCertificates()[0] + "\n"        
-                                  + "************ END SECURE CONNECTION STATS ************\n"
-                                );
-
-                                ps.setMessage("Sucessfully logged in");
-                                ps.send(dos);
-                                String[] friends = getFriends(user);
-                                PacketFriends pf = new PacketFriends(friends);
-                                pf.send(dos);
-                                user.setFriends(friends);
-
-                                users.add(user);
-                                ClientHandler ch = new ClientHandler(this, s, user, dis, dos);
-                                Thread t = new Thread(ch);
-                                clientHandlers.add(ch);
-                                t.start();
-                                
-                                System.out.println("Successful login to account \'" + user.getUsername() + "\' by " + s);
-                            }
-                            else
-                            {
-                                ps.setMessage("Invalid Login Credentials");
-                                ps.send(dos);
-                                System.out.println("Failed login by " + s);
-                            }
-                            break;
-                        }
-                        case REGISTER:
-                        {
-                            PacketRegister pr = new PacketRegister().deserialize(dis);
-                            
-                            boolean isSuccess = register(pr.getUser());
-                            PacketStatus ps = new PacketStatus();
-                            ps.setSuccess(isSuccess);
-                            
-                            if(isSuccess)
-                            {
-                                ps.setMessage("Registered Successfully");                               
-                            }
-                            else
-                            {
-                                ps.setMessage("Failed to Register");       
-                            }
-                            ps.send(dos);
-                            break;
-                        }
-                        default:
-                        {
-                            // Ignore the packet as it's not meant for this thread
-                            System.out.println("Login thread got invalid packet type");
-                            break;
-                        }
-                    }
-                }
-                catch (SocketException e)
-                {
-                    System.out.println("Socket exception in Server class");
-                    ServerMain.setServerRunning(false);
-                    e.getMessage();
-                    break;
-                }
-                catch (Exception e)
-                {
-                    ServerMain.setServerRunning(false);
-                    e.getMessage();
-                    break;
-                }
-            }
-        });
-        Server.start();
+        ls = new LoginServer(this, ss);
+        Thread t = new Thread(ls);
+        ls.setThisThread(t);
+        t.start();
+        
     }
 }

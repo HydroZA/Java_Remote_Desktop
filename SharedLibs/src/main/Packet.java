@@ -26,7 +26,8 @@ public abstract class Packet<T extends Packet>
         FRIENDS,
         ADD_FRIEND,
         REMOVE_FRIEND,
-        FRAME
+        FRAME,
+        STOP_STREAMING
     }
 
     public abstract void serialize(DataOutputStream dos) throws IOException;

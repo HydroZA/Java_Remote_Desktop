@@ -2,6 +2,7 @@ package main;
 
 import java.io.*;
 import java.net.*;
+import java.sql.SQLException;
 
 public class ClientHandler implements Runnable
 {
@@ -12,6 +13,17 @@ public class ClientHandler implements Runnable
     private final Server server;
     private volatile boolean terminated;
     private ClientHandler partner;
+    private Thread thisThread;
+
+    public Thread getThisThread()
+    {
+        return thisThread;
+    }
+
+    public void setThisThread(Thread thisThread)
+    {
+        this.thisThread = thisThread;
+    }
     
     public ClientHandler(Server server, Socket s, User user, DataInputStream dis, DataOutputStream dos)
     {
@@ -105,7 +117,7 @@ public class ClientHandler implements Runnable
                             {
                                 if (ch.getUser().getUsername().equals(partnerUsername))
                                 {
-                                    
+                                    this.partner = ch;
                                     pc.send(ch.dos);
                                 }
                             }
@@ -127,9 +139,7 @@ public class ClientHandler implements Runnable
                     case FRAME:
                     {
                         PacketFrame pf = new PacketFrame().deserialize(dis);
-                        System.out.println(partner.getUser().getUsername());
                         pf.send(partner.dos);
-                        System.out.println("sent a frame");
                         break;
                     }
 
@@ -140,17 +150,32 @@ public class ClientHandler implements Runnable
                         terminated = true;
                         break;
                     }
-                    
-                    default:
-                        System.out.println("well there's ur problem lmao");
+                    case STOP_STREAMING:
+                    {
+                        PacketStopStreaming pss = new PacketStopStreaming();
+                        pss.sendOnlyType(partner.dos);
+                        break;
+                    }
                 }
             }
-
-            catch (Exception e)
+            catch (SocketException e)
+            {
+                try
+                {
+                    System.out.println("Closing ClientHandler for: " + user.getUsername());
+                    server.logout(user);
+                    terminated = true;
+                }
+                catch (SQLException | InterruptedException ex)
+                {
+                    terminated = true;
+                }
+            }
+            catch (IOException | InterruptedException | SQLException e)
             {
                 System.out.println("Failure in ClientHandler thread for user: " + user.getUsername());
                 e.printStackTrace();
-                break;
+                terminated = true;
             }
         }
     }

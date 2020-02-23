@@ -6,7 +6,7 @@
 package main;
 
 import java.awt.Image;
-import java.io.DataInputStream;
+import java.io.IOException;
 import javax.swing.ImageIcon;
 
 /**
@@ -15,16 +15,12 @@ import javax.swing.ImageIcon;
  */
 public class IncomingStreamUI extends javax.swing.JFrame
 {
-    private final MainUI mui;
-    private final String partnerName;
-    private final DataInputStream dis;
+    private final Client client;
     
     public IncomingStreamUI(MainUI mui, PacketConnectRequest pcr)
     {
-        this.mui = mui;
-        this.partnerName = pcr.getPartner();
-        this.dis = mui.getClient().getDis();
-        
+        this.client = mui.getClient();
+        this.setTitle(pcr.getPartner());
         initComponents();
     }
 
@@ -36,7 +32,10 @@ public class IncomingStreamUI extends javax.swing.JFrame
             lblFrameViewer.setIcon(new ImageIcon(
                     new ImageIcon(frame)
                             .getImage()
-                                .getScaledInstance(lblFrameViewer.getWidth(), lblFrameViewer.getHeight(), Image.SCALE_DEFAULT)));
+                                .getScaledInstance(
+                                        lblFrameViewer.getWidth(), 
+                                        lblFrameViewer.getHeight(), 
+                                        Image.SCALE_DEFAULT)));
         });
         UpdateUI.start();
     }
@@ -95,7 +94,16 @@ public class IncomingStreamUI extends javax.swing.JFrame
 
     private void mnuDisconnectActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_mnuDisconnectActionPerformed
     {//GEN-HEADEREND:event_mnuDisconnectActionPerformed
-        
+        try
+        {
+            client.stopStream();
+            client.resetToMainUI();
+        }
+        catch (IOException e)
+        {
+            System.out.println(e.getMessage());
+            System.exit(1);
+        }
     }//GEN-LAST:event_mnuDisconnectActionPerformed
 
     /**
