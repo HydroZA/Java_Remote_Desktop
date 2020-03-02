@@ -69,9 +69,12 @@
     properties which you can use, check the target you are overriding in the
     nbproject/build-impl.xml file. 
 
-    -->
-	<target name="-post-compile">
+
 		<copy file="certs/localhost-servercert.p12" todir="${dist.dir}/certs"/>        
 		<copy file="server.properties" todir="${dist.dir}"/>
+
+    -->
+	<target name="-post-compile">
+		<mkdir dir="${dist.dir}/certs"/>
 	</target>
 </project>

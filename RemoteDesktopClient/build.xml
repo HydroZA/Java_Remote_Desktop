@@ -68,10 +68,16 @@
     the compile target as the regular run target does. Again, for a list of available 
     properties which you can use, check the target you are overriding in the
     nbproject/build-impl.xml file. 
+	
+			<copydir src="certs/" dest="${dist.dir}/certs"/>  
+			<copy file="client.properties" todir="${dist.dir}"/>	
 
-    -->
-	<target name="-post-compile">
-		<copy file="certs/localhost-clientcert.p12" todir="${dist.dir}/certs"/>  
-		<copy file="client.properties" todir="${dist.dir}"/>		
-	</target>
+   -->
+	
+		<target name="-post-compile">
+			
+			<mkdir dir="${dist.dir}/certs"/>
+			
+		</target>
+	
 </project>
