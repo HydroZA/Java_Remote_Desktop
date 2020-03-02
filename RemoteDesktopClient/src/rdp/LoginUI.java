@@ -172,39 +172,15 @@ public class LoginUI extends javax.swing.JFrame
 
             ict = new IncomingConnectionThread(client.getDis(), this);
             t = new Thread(ict);
+            
+            // Let everyone get to know each other
             ict.setClient(client);
             client.setIct(ict);
-            
-            
-            MainUI mui = new MainUI(user, client);
-            ict.setMainUI(mui);
-            mui.setIncomingConnectionThread(ict);
-            client.setMui(mui);
             
             // Start IncomingConnectionThread
             t.start();
 
             client.login();
-
-            // Wait so the IncomingConnectionThread can hear back if the login was successful
-            ict.setLoginThread(getThread());
-            getThread().suspend();
-            
-            if (client.isLoggedIn())
-            {
-                System.out.println("Login Succeeded");
-                JOptionPane.showMessageDialog(this, "Logged In Successfully", "Login Attempt", INFORMATION_MESSAGE);
-                               
-                // Spawn MainUI and dispose this       
-                mui.setVisible(true);
-                this.dispose();
-            }
-            else
-            {
-                JOptionPane.showMessageDialog(this, "Login Failed", "Login Attempt", ERROR_MESSAGE);
-                System.out.println("Login Failed");
-                ict.getDis().close();
-            }
         }
         catch (SSLException e)
         { 

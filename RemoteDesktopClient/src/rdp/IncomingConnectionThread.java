@@ -121,12 +121,12 @@ public class IncomingConnectionThread implements Runnable
                         if (message.equals("Sucessfully logged in"))
                         {
                             client.setLoggedIn(true);
-                            LoginThread.resume();
+                            client.loginSuccessful(lui);
                         }     
                         else if (message.equals("Invalid Login Credentials"))
                         {
                             client.setLoggedIn(false);
-                            LoginThread.resume();
+                            client.loginFailed(lui);        
                         }
                         else
                         {

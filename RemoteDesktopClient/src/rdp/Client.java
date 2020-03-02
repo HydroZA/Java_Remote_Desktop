@@ -16,6 +16,9 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import javax.imageio.ImageIO;
 import javax.net.ssl.SSLSocket;
+import javax.swing.JOptionPane;
+import static javax.swing.JOptionPane.ERROR_MESSAGE;
+import static javax.swing.JOptionPane.INFORMATION_MESSAGE;
 import org.apache.commons.io.FileUtils;
 import static rdp.CertificateHandler.Type.CLIENT;
 
@@ -186,7 +189,7 @@ public class Client
     {
         this.allowingIncomingConnections = allowingIncomingConnections;
     }
-
+    
     public MainUI getMui()
     {
         return mui;
@@ -383,6 +386,28 @@ public class Client
     public OutgoingStreamUI getOsui()
     {
         return osui;
+    }
+    
+    public void loginSuccessful(LoginUI lui)
+    {
+        System.out.println("Login Succeeded");
+        JOptionPane.showMessageDialog(lui, "Logged In Successfully", "Login Attempt", INFORMATION_MESSAGE);
+                               
+        // Spawn MainUI and dispose LoginUI
+        MainUI mui = new MainUI(user, this);
+        ict.setMainUI(mui);
+        mui.setIncomingConnectionThread(ict);
+        setMui(mui);
+        
+        mui.setVisible(true);
+        lui.dispose();
+    }
+    
+    public void loginFailed(LoginUI lui) throws IOException
+    {
+        JOptionPane.showMessageDialog(lui, "Login Failed", "Login Attempt", ERROR_MESSAGE);
+        System.out.println("Login Failed");
+        ict.getDis().close();
     }
 
     public void setOsui(OutgoingStreamUI osui)
