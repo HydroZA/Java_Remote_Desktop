@@ -28,24 +28,23 @@ public class LoginUI extends javax.swing.JFrame
      * Creates new form LoginUI
      */
     private Client client;
-    
+
     public LoginUI()
     {
         initComponents();
-        
+
         // Center the window on the screen and set the default button to Longin
         this.setLocationRelativeTo(null);
         this.getRootPane().setDefaultButton(btnLogin);
-        
-        try  
+
+        try
         {
             client = new Client();
-        }
-        catch (Exception ex)
+        } catch (Exception ex)
         {
             Client.log.log(Level.SEVERE, "Unable to create Client object{0}", ex.toString());
         }
-        
+
     }
 
     @SuppressWarnings("unchecked")
@@ -120,22 +119,21 @@ public class LoginUI extends javax.swing.JFrame
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
-    
+
     private String convertToSHA256(String plainText)
     {
         byte[] bytesText = null;
-        
+
         //Hash password
         try
         {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             bytesText = digest.digest(plainText.getBytes(StandardCharsets.UTF_8));
-        }
-        catch (NoSuchAlgorithmException e)
+        } catch (NoSuchAlgorithmException e)
         {
-            Client.log.severe("Requested hashing algorithm not found");  
+            Client.log.severe("Requested hashing algorithm not found");
         }
-        
+
         // Convert to string format
         StringBuilder encText = new StringBuilder();
         for (int i = 0; i < bytesText.length; i++)
@@ -149,10 +147,7 @@ public class LoginUI extends javax.swing.JFrame
         }
         return encText.toString().toUpperCase();
     }
-    public Thread getThread()
-    {
-        return Thread.currentThread();
-    }
+
     private void btnLoginActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnLoginActionPerformed
     {//GEN-HEADEREND:event_btnLoginActionPerformed
         String username = txfUsername.getText();
@@ -160,54 +155,51 @@ public class LoginUI extends javax.swing.JFrame
 
         // Turn password into a SHA-256 Hash
         password = convertToSHA256(password);
-                
-        User user = new User (username, password);
+
+        User user = new User(username, password);
         client.setUser(user);
-        
+
         IncomingConnectionThread ict;
-        
+
         try
         {
             client.connect();
 
             ict = new IncomingConnectionThread(client.getDis(), this);
             Thread t = new Thread(ict);
-            
+
             // Let everyone get to know each other
             ict.setClient(client);
             client.setIct(ict);
-            
+
             // Start IncomingConnectionThread
             t.start();
 
             client.login();
-        }
-        catch (SSLException e)
+        } catch (SSLException e)
         {
             try
             {
-                client.getDis().close();
-            } 
-            catch (IOException ex)
+                // Stop the current SSL connection, exchange certs, then try again
+                client.disconnect();
+            } catch (IOException ex)
             {
                 Client.log.warning("Failed to kill incoming connection thread!");
             }
-            
+
             Client.log.info("Attempting Certificate Exchange...");
             try
             {
                 client.performCertificateExchange();
                 JOptionPane.showMessageDialog(this, "Certificate Exchange Successful. Please Retry Login.", "Success", INFORMATION_MESSAGE);
-            }
-            catch (Exception ex)
+            } catch (Exception ex)
             {
                 Client.log.warning("Certificate Exchange Failed");
             }
-        }
-        catch (Exception e)
+        } catch (Exception e)
         {
             JOptionPane.showMessageDialog(this, "Failed to login - Exception");
-            Client.log.warning("LOGIN FAILED!" + e.toString());
+            Client.log.log(Level.WARNING, "LOGIN FAILED!{0}", e.toString());
         }
     }//GEN-LAST:event_btnLoginActionPerformed
 
@@ -231,31 +223,26 @@ public class LoginUI extends javax.swing.JFrame
                     break;
                 }
             }
-        }
-        catch (ClassNotFoundException ex)
+        } catch (ClassNotFoundException ex)
         {
             java.util.logging.Logger.getLogger(LoginUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        catch (InstantiationException ex)
+        } catch (InstantiationException ex)
         {
             java.util.logging.Logger.getLogger(LoginUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        catch (IllegalAccessException ex)
+        } catch (IllegalAccessException ex)
         {
             java.util.logging.Logger.getLogger(LoginUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        catch (javax.swing.UnsupportedLookAndFeelException ex)
+        } catch (javax.swing.UnsupportedLookAndFeelException ex)
         {
             java.util.logging.Logger.getLogger(LoginUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
-        
-       
+
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(() ->
         {
             new LoginUI().setVisible(true);
-            
+
         });
     }
 

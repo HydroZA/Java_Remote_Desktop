@@ -12,26 +12,36 @@ import java.io.*;
 import java.net.*;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
+import java.util.logging.FileHandler;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 public class ServerMain
 {
 
     private static Server server;
     private static boolean serverRunning = false;
+    public static Logger LOG;
+
+    public static void setServerRunning(boolean serverRunning)
+    {
+        ServerMain.serverRunning = serverRunning;
+    }
 
     public static boolean isServerRunning()
     {
         return serverRunning;
     }
 
-    public static void setServerRunning(boolean serverRunning)
-    {
-        serverRunning = serverRunning;
-    }
-
-    public static void main(String[] args)
+    public static void main(String[] args) throws IOException
     {
 
+        ServerMain.LOG = Logger.getLogger("Server");
+        FileHandler fh = new FileHandler ("logs/server.log");
+        SimpleFormatter sf = new SimpleFormatter();
+        ServerMain.LOG.addHandler(fh);
+        fh.setFormatter(sf);
+        
         // Shutdown hook. Code runs when program closed without going through normal exit procedure; ie. when closed using task manager.
         Runtime.getRuntime().addShutdownHook(new Thread()
         {

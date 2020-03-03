@@ -274,6 +274,10 @@ public class MainUI extends javax.swing.JFrame
             JOptionPane.showMessageDialog(this, "Unable to connect");
             Client.log.severe("Failed to ask permission to connect");
         }
+        catch(NullPointerException e)
+        {
+            Client.log.warning("No user selected");
+        }
     }//GEN-LAST:event_btnConnectActionPerformed
 
     private void mnuLogoutActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_mnuLogoutActionPerformed

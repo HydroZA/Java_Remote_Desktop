@@ -11,11 +11,14 @@ package rdp;
 import java.io.*;
 import java.net.*;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ClientHandler implements Runnable
 {
-    private User user;
-    private Socket s;
+
+    private final User user;
+    private final Socket s;
     private final DataInputStream dis;
     private final DataOutputStream dos;
     private final Server server;
@@ -32,7 +35,7 @@ public class ClientHandler implements Runnable
     {
         this.thisThread = thisThread;
     }
-    
+
     public ClientHandler(Server server, Socket s, User user, DataInputStream dis, DataOutputStream dos)
     {
         this.terminated = false;
@@ -41,6 +44,7 @@ public class ClientHandler implements Runnable
         this.dos = dos;
         this.s = s;
         this.server = server;
+
     }
 
     public User getUser()
@@ -117,17 +121,27 @@ public class ClientHandler implements Runnable
                         PacketConnectRequest pc = new PacketConnectRequest().deserialize(dis);
                         String partnerUsername = pc.getPartner();
                         String requester = pc.getRequester();
-                        
+
                         // if we are the initiator -> send our request to the partner
                         if (requester.equals(user.getUsername()))
                         {
+                            boolean userFound = false;
                             for (ClientHandler ch : Server.clientHandlers)
                             {
                                 if (ch.getUser().getUsername().equals(partnerUsername))
                                 {
+                                    userFound = true;
                                     this.partner = ch;
                                     pc.send(ch.dos);
+                                    break;
                                 }
+                            }
+                            if (!userFound)
+                            {
+                                // Tell the initiator that the user is not online
+                                ServerMain.LOG.info(user.getUsername() + " attempted to connect to " + partnerUsername + " but they are not online");
+                                PacketStatus ps = new PacketStatus(false, "User is not online");
+                                ps.send(dos);
                             }
                         }
                         // We are the relay responder -> send our reply the requester
@@ -139,8 +153,10 @@ public class ClientHandler implements Runnable
                                 {
                                     this.partner = ch;
                                     pc.send(ch.dos);
+                                    break;
                                 }
                             }
+
                         }
                         break;
                     }
@@ -154,7 +170,6 @@ public class ClientHandler implements Runnable
                     case LOGOUT:
                     {
                         server.logout(user);
-                        s.close();
                         terminated = true;
                         break;
                     }
@@ -166,26 +181,19 @@ public class ClientHandler implements Runnable
                     }
                 }
             }
-            catch (SocketException e)
+            catch (Exception e)
             {
+                ServerMain.LOG.severe("Closing ClientHandler thread for user: " + user.getUsername());
+                ServerMain.LOG.severe(e.toString());
                 try
                 {
-                    System.out.println("Closing ClientHandler for: " + user.getUsername());
                     server.logout(user);
-                    terminated = true;
                 }
-                catch (SQLException | InterruptedException ex)
+                catch (SQLException | InterruptedException | IOException ex)
                 {
-                    terminated = true;
+                    ServerMain.LOG.severe(e.toString());
                 }
-            }
-            catch (IOException | InterruptedException | SQLException e)
-            {
-                System.out.println("Failure in ClientHandler thread for user: " + user.getUsername());
-                e.printStackTrace();
-                terminated = true;
             }
         }
     }
 }
-

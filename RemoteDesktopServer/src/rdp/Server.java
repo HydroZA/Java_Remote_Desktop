@@ -12,7 +12,9 @@ import java.io.*;
 import java.net.*;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Vector;
+import java.util.logging.Level;
 import javax.net.ssl.SSLServerSocket;
 import static rdp.CertificateHandler.Type.SERVER;
 
@@ -44,14 +46,15 @@ public final class Server
         try
         {
             cp = new ConfigParser("server.properties").parse();
-            System.out.println("Found Config File");
+            ServerMain.LOG.info("Found Config File");
         }
         catch (FileNotFoundException e)
         {
-            System.out.println("Creating Config File...");
+            ServerMain.LOG.warning("Config File not Found");
+            ServerMain.LOG.info("Creating Config File...");
             File conf = createConfigFile();
             cp = new ConfigParser(conf.getAbsolutePath()).parse();
-            System.out.println("Created Config File");
+            ServerMain.LOG.info("Created Config File");
         }
 
         this.SERVER_IP = cp.getSERVER_IP();
@@ -65,7 +68,7 @@ public final class Server
         //Generate KeyStore and Certificates if not found, and assign values to CertificateHandler
         if (new File("certs/" + KEY_STORE_NAME + ".jks").exists())
         {
-            System.out.println("TLS Certificate Found");
+            ServerMain.LOG.info("TLS Certificate Found");
             ch = new CertificateHandler(SERVER, SERVER_IP.getHostAddress(), TRUST_STORE_NAME, TRUST_STORE_PWD, KEY_STORE_NAME, KEY_STORE_PWD, CERTIFICATE);
             ch.setTrustStore(new File("certs/" + TRUST_STORE_NAME + ".jks"));
             ch.setCertificate(new File("certs/" + CERTIFICATE + ".cer"));
@@ -73,19 +76,20 @@ public final class Server
         }
         else
         {
-            System.out.println("TLS Certificate Not Found, Generating...");
-            System.out.println("CERTIFCATE NAME: " + CERTIFICATE);
+            ServerMain.LOG.warning("TLS Certificate Not Found, Generating...");
             ch = new CertificateHandler(SERVER, SERVER_IP.getHostAddress(), TRUST_STORE_NAME, TRUST_STORE_PWD, KEY_STORE_NAME, KEY_STORE_PWD, CERTIFICATE);
             ch = ch.generate();
-            System.out.println("Generated TLS Certificate");
+            ServerMain.LOG.info("Generated TLS Certificate");
         }
+
+        ServerMain.LOG.info(ch.toString());
 
         this.con = getDatabaseConnection();
         if (!databaseExists())
         {
-            System.out.println("Creating Database...");
+            ServerMain.LOG.info("Creating Database...");
             createDatabase();
-            System.out.println("Database Created");
+            ServerMain.LOG.info("Database Created");
         }
     }
 
@@ -295,30 +299,30 @@ public final class Server
         return conf;
     }
 
-    public void logout(User user) throws SQLException, InterruptedException
+    public void logout(User user) throws SQLException, InterruptedException, IOException
     {
         // Update DB to show logged out user
         String query = "UPDATE USERS SET loggedin=0 WHERE username=\'" + user.getUsername() + "\'";
-        PreparedStatement stmt = con.prepareStatement(query);
-
-        stmt.execute();
-        stmt.close();
+        try (PreparedStatement stmt = con.prepareStatement(query))
+        {
+            stmt.execute();
+        }
 
         // Remove user from Users vector
         users.remove(user);
-
+        
         // Very hacky and slow, look into improvements
         for (ClientHandler ch : clientHandlers)
         {
             if (ch.getUser().getUsername().equals(user.getUsername()))
             {
-                ch.getThisThread().stop();
+                ch.getDis().close();
                 clientHandlers.remove(ch);
 
                 break;
             }
         }
-        System.out.println(user.getUsername() + " logged out");
+        ServerMain.LOG.log(Level.INFO, "{0} logged out", user.getUsername());
     }
 
     public String[] getLoggedInUsers()
@@ -335,12 +339,24 @@ public final class Server
         return usernames;
     }
 
-    public void logoutAllUsers() throws SQLException, InterruptedException
+    public void logoutAllUsers() throws SQLException, InterruptedException, IOException
     {
-        for (User ch : users)
+        // Update DB to show logged out user
+        for (User usr : users)
         {
-            logout(ch);
+            String query = "UPDATE USERS SET loggedin=0 WHERE username=\'" + usr.getUsername() + "\'";
+            try (PreparedStatement stmt = con.prepareStatement(query))
+            {
+                stmt.execute();
+            }
         }
+        
+        // Close all the sockets for the active users
+        for (ClientHandler c : clientHandlers)
+        {
+            c.getDis().close();
+        }
+        
         users.clear();
         clientHandlers.clear();
     }
@@ -402,12 +418,13 @@ public final class Server
         }
         catch (NullPointerException e)
         {
+            ServerMain.LOG.severe(e.toString());
         }
 
         // logout all users
         logoutAllUsers();
 
-        System.out.println("Server Shutdown");
+        ServerMain.LOG.info("Server Shutdown");
     }
 
     public boolean addFriend(String username, String friendName)
@@ -448,8 +465,6 @@ public final class Server
 
                 if (rs3.getInt(1) == 1)
                 {
-                    System.out.println("Users are already friends");
-
                     stmt3.close();
                     rs3.close();
                     return false;
@@ -464,20 +479,20 @@ public final class Server
 
                     stmt4.close();
 
-                    System.out.println("\'" + username + "\' added \'" + friendName + "\' as a friend");
+                    ServerMain.LOG.info("\'" + username + "\' added \'" + friendName + "\' as a friend");
                     return true;
                 }
             }
             else
             {
-                System.out.println("Requested friend not found");
+                ServerMain.LOG.info("Requested friend not found");
 
                 return false;
             }
         }
-        catch (Exception e)
+        catch (SQLException e)
         {
-            e.printStackTrace();
+            ServerMain.LOG.severe(e.toString());
             return false;
         }
     }
@@ -503,7 +518,10 @@ public final class Server
         if (rs2.next() == false)
         {
             // Users are not friends, return false
-            System.out.println("\'" + user + "\' attempted to remove friend: \'" + friendName + "\' but they are not friends");
+            ServerMain.LOG.log(Level.WARNING, "''{0}'' attempted to remove friend: ''{1}'' but they are not friends", new Object[]
+            {
+                user, friendName
+            });
             return false;
         }
         else
@@ -514,7 +532,7 @@ public final class Server
             PreparedStatement stmt3 = con.prepareStatement(query);
             stmt3.execute();
 
-            System.out.println("\'" + user + "\' removed \'" + friendName + "\' as a friend");
+            ServerMain.LOG.info("\'" + user + "\' removed \'" + friendName + "\' as a friend");
             return true;
         }
     }
@@ -550,8 +568,7 @@ public final class Server
 
         catch (Exception e)
         {
-            System.out.println("Failed to get SSL Server Socket");
-            e.printStackTrace();
+            ServerMain.LOG.log(Level.SEVERE, "Failed to get SSL Server Socket{0}", e.toString());
             return;
         }
 

@@ -104,13 +104,16 @@ public class IncomingConnectionThread implements Runnable
             try
             {
                 int i = dis.readInt();
-                if (i > 100)
+                Packet.Type tp;
+                try
                 {
-                    // we must have received something erroneously for the action to be this high 
+                    tp = Packet.Type.values()[i];
+                }
+                catch (IndexOutOfBoundsException e)
+                {
+                    Client.log.warning("Incoming Connection Thread received invalid request: " + e.toString());
                     continue;
                 }
-                
-                Packet.Type tp = Packet.Type.values()[i];
                 switch (tp)
                 {
                     case STATUS:
@@ -199,6 +202,7 @@ public class IncomingConnectionThread implements Runnable
                     }
                     case STOP_STREAMING:
                     {
+                        
                         try
                         {
                             if (osui.isVisible())

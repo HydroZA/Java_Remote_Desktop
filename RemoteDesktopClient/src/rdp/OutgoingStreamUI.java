@@ -20,26 +20,23 @@ import org.apache.commons.lang3.time.StopWatch;
  */
 public class OutgoingStreamUI extends javax.swing.JFrame
 {
+
     private volatile int frames;
     private volatile StopWatch sw;
     private final String partnerName;
-    private final MainUI mui;
     private final Client client;
-    private final IncomingConnectionThread ict;
     private final DataOutputStream dos;
     private volatile boolean terminated;
-    
+
     public OutgoingStreamUI(MainUI mui, PacketConnectRequest pcr)
     {
         this.partnerName = pcr.getRequester();
-        this.mui = mui;
         this.client = mui.getClient();
-        this.ict = mui.getIncomingConnectionThread();
         this.dos = mui.getClient().getDos();
         this.terminated = false;
         this.sw = new StopWatch();
         initComponents();
-        
+
         startSendingFrames();
         startUpdateUI();
     }
@@ -47,16 +44,16 @@ public class OutgoingStreamUI extends javax.swing.JFrame
     private void startUpdateUI()
     {
         Thread UpdateUI = new Thread(() ->
-        {    
+        {
             while (!terminated)
             {
                 lblSentFrames.setText(String.valueOf(frames));
                 lblElapsedTime.setText(String.valueOf(sw.getTime(TimeUnit.SECONDS)));
             }
         });
-        UpdateUI.start();     
+        UpdateUI.start();
     }
-    
+
     private void startSendingFrames()
     {
         Thread SendFrames = new Thread(() ->
@@ -64,12 +61,13 @@ public class OutgoingStreamUI extends javax.swing.JFrame
             sw.start(); // Start the stop watch to get elapsed time
             while (!terminated)
             {
+                System.out.println(terminated);
                 try
                 {
                     byte[] img = client.takeScreenshot();
                     PacketFrame pf = new PacketFrame(img, img.length);
                     pf.send(dos);
-                    
+
                     frames++;
                 }
                 catch (IOException | AWTException e)
@@ -79,8 +77,7 @@ public class OutgoingStreamUI extends javax.swing.JFrame
                 }
             }
             sw.stop();
-            printStreamStats();
-            endStream();
+            System.out.println("startSendingFrames terminated");
         });
         SendFrames.start();
     }
@@ -89,7 +86,7 @@ public class OutgoingStreamUI extends javax.swing.JFrame
     {
         return terminated;
     }
-    
+
     private void endStream()
     {
         try
@@ -113,8 +110,7 @@ public class OutgoingStreamUI extends javax.swing.JFrame
         long time = sw.getTime(TimeUnit.SECONDS);
         long fps = frames / time;
 
-        return(
-                "*********** STREAM STATS ***********\n"
+        return ("*********** STREAM STATS ***********\n"
                 + "Total Frames Sent: " + frames + "\n"
                 + "Elapsed Time: " + time + " Seconds\n"
                 + "Average Frame Rate: " + fps + " FPS\n"
