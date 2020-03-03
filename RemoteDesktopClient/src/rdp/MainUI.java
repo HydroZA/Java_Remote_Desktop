@@ -44,7 +44,7 @@ public class MainUI extends javax.swing.JFrame
                 }
                 catch (IOException e)
                 {
-                    System.out.println("Exception while attempting to logout");
+                    Client.log.severe("Exception while attempting to logout");
                 }
             }
         });
@@ -259,6 +259,7 @@ public class MainUI extends javax.swing.JFrame
         catch (IOException e)
         {
             JOptionPane.showMessageDialog(this, "Failed to remove friend");
+            Client.log.severe("Failed to remove friend");
         }
     }//GEN-LAST:event_btnRemoveFriendActionPerformed
 
@@ -271,6 +272,7 @@ public class MainUI extends javax.swing.JFrame
         catch (IOException e)
         {
             JOptionPane.showMessageDialog(this, "Unable to connect");
+            Client.log.severe("Failed to ask permission to connect");
         }
     }//GEN-LAST:event_btnConnectActionPerformed
 
@@ -286,7 +288,7 @@ public class MainUI extends javax.swing.JFrame
         }
         catch (IOException e)
         {
-            System.out.println("Exception while attempting to logout");
+            Client.log.severe("Exception while attempting to logout");
         }
 
         LoginUI lui = new LoginUI();
@@ -301,12 +303,12 @@ public class MainUI extends javax.swing.JFrame
             if (client.isLoggedIn())
             {
                 client.logout();
-                System.out.println("Logout Succeeded");
+                Client.log.info("Logout Succeeded");
             }
         }
         catch (IOException e)
         {
-            System.out.println("Exception while attempting to Logout");
+            Client.log.severe("Exception while attempting to Logout");
         }
         System.exit(0);
     }//GEN-LAST:event_mnuExitActionPerformed
@@ -318,16 +320,18 @@ public class MainUI extends javax.swing.JFrame
 
     private void tglBtnAllowConnectionsItemStateChanged(java.awt.event.ItemEvent evt)//GEN-FIRST:event_tglBtnAllowConnectionsItemStateChanged
     {//GEN-HEADEREND:event_tglBtnAllowConnectionsItemStateChanged
-        // System.out.println(tglBtnAllowConnections.isSelected());
+        // Client.log.info(tglBtnAllowConnections.isSelected());
         if (tglBtnAllowConnections.isSelected())
         {
             client.setAllowingIncomingConnections(true);
             tglBtnAllowConnections.setText("ON");
+            Client.log.info("Now allowing incoming connections");
         }
         else
         {
             client.setAllowingIncomingConnections(false);
             tglBtnAllowConnections.setText("OFF");
+            Client.log.info("Disallowing Incoming Connections");
         }
     }//GEN-LAST:event_tglBtnAllowConnectionsItemStateChanged
 

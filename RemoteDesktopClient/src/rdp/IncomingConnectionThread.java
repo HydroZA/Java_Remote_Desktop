@@ -98,7 +98,7 @@ public class IncomingConnectionThread implements Runnable
     @Override
     public void run()
     {
-        System.out.println("IncomingConnectionThread Initiated");
+        Client.log.info("IncomingConnectionThread Initiated");
         while (!terminated)
         {
             try
@@ -118,19 +118,19 @@ public class IncomingConnectionThread implements Runnable
                         PacketStatus ps = new PacketStatus().deserialize(dis);
                         String message = ps.getMessage();
                         
-                        if (message.equals("Sucessfully logged in"))
+                        switch (message)
                         {
-                            client.setLoggedIn(true);
-                            client.loginSuccessful(lui);
-                        }     
-                        else if (message.equals("Invalid Login Credentials"))
-                        {
-                            client.setLoggedIn(false);
-                            client.loginFailed(lui);        
-                        }
-                        else
-                        {
-                            JOptionPane.showMessageDialog(this.mui, message, ps.isSuccess() ? "Sucessful" : "Failed", ps.isSuccess() ? INFORMATION_MESSAGE : ERROR_MESSAGE);
+                            case "Sucessfully logged in":
+                                client.setLoggedIn(true);
+                                client.loginSuccessful(lui);
+                                break;
+                            case "Invalid Login Credentials":
+                                client.setLoggedIn(false);
+                                client.loginFailed(lui);
+                                break;
+                            default:
+                                JOptionPane.showMessageDialog(this.mui, message, ps.isSuccess() ? "Sucessful" : "Failed", ps.isSuccess() ? INFORMATION_MESSAGE : ERROR_MESSAGE);
+                                break;
                         }
                         
                         break;
@@ -156,6 +156,7 @@ public class IncomingConnectionThread implements Runnable
                             else
                             {
                                 JOptionPane.showMessageDialog(mui, "Your Stream Request was Denied", "STREAM REQUEST DENIED", ERROR_MESSAGE);
+                                Client.log.info("Stream Request Denied");
                             }
                         }
 
@@ -227,7 +228,7 @@ public class IncomingConnectionThread implements Runnable
                 terminated = true;                
             }
         }
-        System.out.println("IncomingConnectionThread Terminated");
+        Client.log.info("IncomingConnectionThread Terminated");
     }
 
     public IncomingStreamUI getIsui()
@@ -249,5 +250,4 @@ public class IncomingConnectionThread implements Runnable
     {
         this.lui = lui;
     }
-    
 }

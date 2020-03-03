@@ -74,7 +74,7 @@ public class OutgoingStreamUI extends javax.swing.JFrame
                 }
                 catch (IOException | AWTException e)
                 {
-                    System.out.println("Stream Closed");
+                    Client.log.severe(e.toString());
                     terminated = true;
                 }
             }
@@ -98,7 +98,7 @@ public class OutgoingStreamUI extends javax.swing.JFrame
         }
         catch (IOException e)
         {
-            e.printStackTrace();
+            Client.log.severe(e.toString());
         }
         client.resetToMainUI();
     }
@@ -215,7 +215,7 @@ public class OutgoingStreamUI extends javax.swing.JFrame
     private void btnEndStreamActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnEndStreamActionPerformed
     {//GEN-HEADEREND:event_btnEndStreamActionPerformed
         terminated = true;
-        printStreamStats();
+        Client.log.info(printStreamStats());
         endStream();
     }//GEN-LAST:event_btnEndStreamActionPerformed
 

@@ -77,7 +77,7 @@
 		<target name="-post-compile">
 			
 			<mkdir dir="${dist.dir}/certs"/>
-			
+			<mkdir dir="${dist.dir}/logs"/>
 		</target>
 	
 </project>

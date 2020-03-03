@@ -8,12 +8,13 @@
  */
 package rdp;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.logging.Level;
 import javax.net.ssl.SSLException;
 import javax.swing.JOptionPane;
-import static javax.swing.JOptionPane.ERROR_MESSAGE;
 import static javax.swing.JOptionPane.INFORMATION_MESSAGE;
 
 /**
@@ -42,7 +43,7 @@ public class LoginUI extends javax.swing.JFrame
         }
         catch (Exception ex)
         {
-            System.out.println("Unable to create Client object");
+            Client.log.log(Level.SEVERE, "Unable to create Client object{0}", ex.toString());
         }
         
     }
@@ -132,7 +133,7 @@ public class LoginUI extends javax.swing.JFrame
         }
         catch (NoSuchAlgorithmException e)
         {
-            System.out.println("Requested hashing algorithm not found");  
+            Client.log.severe("Requested hashing algorithm not found");  
         }
         
         // Convert to string format
@@ -164,14 +165,13 @@ public class LoginUI extends javax.swing.JFrame
         client.setUser(user);
         
         IncomingConnectionThread ict;
-        Thread t = new Thread();
         
         try
         {
             client.connect();
 
             ict = new IncomingConnectionThread(client.getDis(), this);
-            t = new Thread(ict);
+            Thread t = new Thread(ict);
             
             // Let everyone get to know each other
             ict.setClient(client);
@@ -183,9 +183,17 @@ public class LoginUI extends javax.swing.JFrame
             client.login();
         }
         catch (SSLException e)
-        { 
-            t.stop();
-            System.out.println("Attempting Certificate Exchange...");
+        {
+            try
+            {
+                client.getDis().close();
+            } 
+            catch (IOException ex)
+            {
+                Client.log.warning("Failed to kill incoming connection thread!");
+            }
+            
+            Client.log.info("Attempting Certificate Exchange...");
             try
             {
                 client.performCertificateExchange();
@@ -193,13 +201,13 @@ public class LoginUI extends javax.swing.JFrame
             }
             catch (Exception ex)
             {
-                System.out.println("Certificate Exchange Failed");
+                Client.log.warning("Certificate Exchange Failed");
             }
         }
         catch (Exception e)
         {
             JOptionPane.showMessageDialog(this, "Failed to login - Exception");
-            e.printStackTrace();
+            Client.log.warning("LOGIN FAILED!" + e.toString());
         }
     }//GEN-LAST:event_btnLoginActionPerformed
 

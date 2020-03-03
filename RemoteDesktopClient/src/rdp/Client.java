@@ -14,13 +14,16 @@ import java.net.InetAddress;
 import java.io.*;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 import javax.imageio.ImageIO;
 import javax.net.ssl.SSLSocket;
 import javax.swing.JOptionPane;
 import static javax.swing.JOptionPane.ERROR_MESSAGE;
 import static javax.swing.JOptionPane.INFORMATION_MESSAGE;
 import org.apache.commons.io.FileUtils;
-import static rdp.CertificateHandler.Type.CLIENT;
 
 public class Client
 {
@@ -36,11 +39,11 @@ public class Client
     private InetAddress SERVER_IP;
     private int SERVER_PORT;
     private final String TLS_VERSION = "TLSv1.2";
-    private String TRUST_STORE_NAME;
-    private char[] TRUST_STORE_PWD;
-    private String KEY_STORE_NAME;
-    private char[] KEY_STORE_PWD;
-    private String CERTIFICATE;
+    private final String TRUST_STORE_NAME;
+    private final char[] TRUST_STORE_PWD;
+    private final String KEY_STORE_NAME;
+    private final char[] KEY_STORE_PWD;
+    private final String CERTIFICATE;
     private DataInputStream dis;
     private DataOutputStream dos;
 
@@ -49,111 +52,35 @@ public class Client
     private boolean loggedIn = false;
     private boolean allowingIncomingConnections = false;
     private CertificateHandler ch;
-
-    // Parameterized Constructors
-    public Client(User user, MainUI mui) throws UnknownHostException, FileNotFoundException, Exception
-    {
-        this.user = user;
-        this.mui = mui;
-
-        ConfigParser cp;
-        try
-        {
-            cp = new ConfigParser("client.properties").parse();
-            System.out.println("Config File Found");
-        }
-        catch (FileNotFoundException e)
-        {
-            System.out.println("Creating Config File...");
-            File conf = createConfigFile();
-            cp = new ConfigParser(conf.getAbsolutePath()).parse();
-            System.out.println("Created Config File");
-        }
-        this.SERVER_IP = cp.getSERVER_IP();
-        this.SERVER_PORT = cp.getSERVER_PORT();
-        this.KEY_STORE_NAME = cp.getKEY_STORE_NAME();
-        this.KEY_STORE_PWD = cp.getKEY_STORE_PWD();
-        this.TRUST_STORE_NAME = cp.getTRUST_STORE_NAME();
-        this.TRUST_STORE_PWD = cp.getTRUST_STORE_PWD();
-        this.CERTIFICATE = cp.getCERTIFICATE();
-
-        //Generate KeyStore and Certificates if not found, and assign values to CertificateHandler
-        if (new File("certs/" + KEY_STORE_NAME + ".jks").exists())
-        {
-            System.out.println("TLS Certificate Found");
-            ch = new CertificateHandler(CLIENT, SERVER_IP.getHostAddress(), TRUST_STORE_NAME, TRUST_STORE_PWD, KEY_STORE_NAME, KEY_STORE_PWD, CERTIFICATE);
-            ch.setTrustStore(new File("certs/" + TRUST_STORE_NAME + ".jks"));
-            ch.setCertificate(new File("certs/" + CERTIFICATE + ".cer"));
-            ch.setKeystore(new File("certs/" + KEY_STORE_NAME + ".jks"));
-        }
-        else
-        {
-            System.out.println("TLS Certificate Not Found, Generating...");
-            ch = new CertificateHandler(CLIENT, SERVER_IP.getHostAddress(), TRUST_STORE_NAME, TRUST_STORE_PWD, KEY_STORE_NAME, KEY_STORE_PWD, CERTIFICATE);
-            ch = ch.generate();
-            System.out.println("Generated TLS Certificate");
-        }
-    }
-
-    public Client(User user) throws FileNotFoundException, UnknownHostException, Exception
-    {
-        this.user = user;
-
-        ConfigParser cp;
-        try
-        {
-            cp = new ConfigParser("client.properties").parse();
-            System.out.println("Config File Found");
-        }
-        catch (FileNotFoundException e)
-        {
-            System.out.println("Creating Config File...");
-            File conf = createConfigFile();
-            cp = new ConfigParser(conf.getAbsolutePath()).parse();
-            System.out.println("Created Config File");
-        }
-        this.SERVER_IP = cp.getSERVER_IP();
-        this.SERVER_PORT = cp.getSERVER_PORT();
-        this.KEY_STORE_NAME = cp.getKEY_STORE_NAME();
-        this.KEY_STORE_PWD = cp.getKEY_STORE_PWD();
-        this.TRUST_STORE_NAME = cp.getTRUST_STORE_NAME();
-        this.TRUST_STORE_PWD = cp.getTRUST_STORE_PWD();
-        this.CERTIFICATE = cp.getCERTIFICATE();
-
-        //Generate KeyStore and Certificates if not found, and assign values to CertificateHandler
-        if (new File("certs/" + KEY_STORE_NAME + ".jks").exists())
-        {
-            System.out.println("TLS Certificate Found");
-            ch = new CertificateHandler(CertificateHandler.Type.CLIENT, SERVER_IP.getHostAddress(), TRUST_STORE_NAME, TRUST_STORE_PWD, KEY_STORE_NAME, KEY_STORE_PWD, CERTIFICATE);
-            ch.setTrustStore(new File("certs/" + TRUST_STORE_NAME + ".jks"));
-            ch.setCertificate(new File("certs/" + CERTIFICATE + ".cer"));
-            ch.setKeystore(new File("certs/" + KEY_STORE_NAME + ".jks"));
-        }
-        else
-        {
-            System.out.println("TLS Certificate Not Found, Generating...");
-            ch = new CertificateHandler(CertificateHandler.Type.CLIENT, SERVER_IP.getHostAddress(), TRUST_STORE_NAME, TRUST_STORE_PWD, KEY_STORE_NAME, KEY_STORE_PWD, CERTIFICATE);
-            ch = ch.generate();
-            System.out.println("Generated TLS Certificate");
-        }
-    }
+    
+    // Create Logger for Log Files
+    public static Logger log;  
 
     // No-Params Constructor
     public Client() throws FileNotFoundException, UnknownHostException, Exception
     {
+        Client.log = Logger.getLogger("Client");
+        FileHandler fh = new FileHandler ("logs/client.log");
+        SimpleFormatter sf = new SimpleFormatter();
+        log.addHandler(fh);
+        fh.setFormatter(sf);
+                
         ConfigParser cp;
         try
         {
             cp = new ConfigParser("client.properties").parse();
-            System.out.println("Config File Found");
+            log.info("Config File Found");
         }
         catch (FileNotFoundException e)
         {
-            System.out.println("Creating Config File...");
+            log.warning("Config file not found");
+            log.info("Creating Config File...");
             File conf = createConfigFile();
             cp = new ConfigParser(conf.getAbsolutePath()).parse();
-            System.out.println("Created Config File");
+            log.info("Created Config File");
         }
+        log.log(Level.INFO, "Loaded following params from config file:\n{0}", cp.toString());
+
         this.SERVER_IP = cp.getSERVER_IP();
         this.SERVER_PORT = cp.getSERVER_PORT();
         this.KEY_STORE_NAME = cp.getKEY_STORE_NAME();
@@ -165,7 +92,7 @@ public class Client
         //Generate KeyStore and Certificates if not found, and assign values to CertificateHandler
         if (new File("certs/" + KEY_STORE_NAME + ".jks").exists())
         {
-            System.out.println("TLS Certificate Found");
+            log.info("TLS Certificate Found");
             ch = new CertificateHandler(CertificateHandler.Type.CLIENT, SERVER_IP.getHostAddress(), TRUST_STORE_NAME, TRUST_STORE_PWD, KEY_STORE_NAME, KEY_STORE_PWD, CERTIFICATE);
             ch.setTrustStore(new File("certs/" + TRUST_STORE_NAME + ".jks"));
             ch.setCertificate(new File("certs/" + CERTIFICATE + ".cer"));
@@ -173,10 +100,10 @@ public class Client
         }
         else
         {
-            System.out.println("TLS Certificate Not Found, Generating...");
+            log.warning("TLS Certificate Not Found, Generating...");
             ch = new CertificateHandler(CertificateHandler.Type.CLIENT, SERVER_IP.getHostAddress(), TRUST_STORE_NAME, TRUST_STORE_PWD, KEY_STORE_NAME, KEY_STORE_PWD, CERTIFICATE);
             ch = ch.generate();
-            System.out.println("Generated TLS Certificate");
+            log.info("Generated TLS Certificate");
         }
     }
 
@@ -274,7 +201,7 @@ public class Client
         dis = new DataInputStream(sock.getInputStream());
         dos = new DataOutputStream(sock.getOutputStream());
 
-        System.out.println(
+        log.info(
                 "\n*********** SECURE CONNECTION ESTABLISHED ***********\n"
                 + "Server IP: " + sock.getInetAddress().toString() + "\n"
                 + "Username: " + user.getUsername() + "\n"
@@ -333,7 +260,7 @@ public class Client
         }
         catch (IOException e)
         {
-            System.out.println("Error During Certificate Exchange");
+            log.info("Error During Certificate Exchange");
         }
     }
     
@@ -390,11 +317,11 @@ public class Client
     
     public void loginSuccessful(LoginUI lui)
     {
-        System.out.println("Login Succeeded");
+        log.info("Login Succeeded");
         JOptionPane.showMessageDialog(lui, "Logged In Successfully", "Login Attempt", INFORMATION_MESSAGE);
                                
         // Spawn MainUI and dispose LoginUI
-        MainUI mui = new MainUI(user, this);
+        mui = new MainUI(user, this);
         ict.setMainUI(mui);
         mui.setIncomingConnectionThread(ict);
         setMui(mui);
@@ -406,7 +333,7 @@ public class Client
     public void loginFailed(LoginUI lui) throws IOException
     {
         JOptionPane.showMessageDialog(lui, "Login Failed", "Login Attempt", ERROR_MESSAGE);
-        System.out.println("Login Failed");
+        log.info("Login Failed");
         ict.getDis().close();
     }
 
@@ -444,6 +371,6 @@ public class Client
         isui = new IncomingStreamUI(mui, pcr);
         isui.setVisible(true);
         ict.setIsui(isui);
-        this.mui.setVisible(false);
+        mui.setVisible(false);
     }
 }
