@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.logging.Level;
 import javax.swing.JOptionPane;
 
@@ -149,20 +150,11 @@ public class LoginUI extends javax.swing.JFrame
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private String convertToSHA256(String plainText)
+    private String convertToSHA256(String plainText) throws NoSuchAlgorithmException
     {
-        byte[] bytesText = null;
-
         //Hash password
-        try
-        {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            bytesText = digest.digest(plainText.getBytes(StandardCharsets.UTF_8));
-        }
-        catch (NoSuchAlgorithmException e)
-        {
-            Client.log.severe("Requested hashing algorithm not found");
-        }
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] bytesText = digest.digest(plainText.getBytes(StandardCharsets.UTF_8));
 
         // Convert to string format
         StringBuilder encText = new StringBuilder();
@@ -181,10 +173,20 @@ public class LoginUI extends javax.swing.JFrame
     private void btnLoginActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnLoginActionPerformed
     {//GEN-HEADEREND:event_btnLoginActionPerformed
         String username = txfUsername.getText();
-        String password = pwfPassword.getText();
+        String plaintext = String.valueOf(pwfPassword.getPassword());
 
         // Turn password into a SHA-256 Hash
-        password = convertToSHA256(password);
+        String password;
+        try
+        {
+            password = convertToSHA256(plaintext);
+            
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            Client.log.severe("Requested Hashing Algorithm Not Found!");
+            return;
+        }
 
         User user = new User(username, password);
         client.setUser(user);
@@ -203,7 +205,20 @@ public class LoginUI extends javax.swing.JFrame
 
     private void btnRegisterActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnRegisterActionPerformed
     {//GEN-HEADEREND:event_btnRegisterActionPerformed
-        String password = convertToSHA256(pwfPassword.getText());
+        String plaintext = String.valueOf(pwfPassword.getPassword());
+        
+        // Turn password into a SHA-256 Hash
+        String password;
+        try
+        {
+            password = convertToSHA256(plaintext);
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            Client.log.severe("Requested Hashing Algorithm Not Found!");
+            return;
+        }
+        
         User user = new User(txfUsername.getText(), password);
         client.setUser(user);
 
@@ -215,7 +230,7 @@ public class LoginUI extends javax.swing.JFrame
         {
 
             JOptionPane.showMessageDialog(this, "Failed to register - Exception");
-            Client.log.severe("Failed to register due to server error " + e.toString());
+            Client.log.log(Level.SEVERE, "Failed to register due to server error {0}", e.toString());
         }
     }//GEN-LAST:event_btnRegisterActionPerformed
 

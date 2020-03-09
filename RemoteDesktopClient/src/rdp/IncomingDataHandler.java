@@ -89,7 +89,7 @@ public class IncomingDataHandler implements Runnable
     @Override
     public void run()
     {
-        Client.log.info("IncomingConnectionThread Initiated");
+        Client.log.info("IncomingDataHandler Initiated");
         while (!terminated)
         {
             try
@@ -237,7 +237,7 @@ public class IncomingDataHandler implements Runnable
                 terminated = true;
             }
         }
-        Client.log.info("IncomingConnectionThread Terminated");
+        Client.log.info("IncomingDataHandler Terminated");
     }
 
     public IncomingStreamUI getIsui()
