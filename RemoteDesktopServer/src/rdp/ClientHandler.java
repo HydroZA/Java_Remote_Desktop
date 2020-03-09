@@ -15,6 +15,7 @@ import java.util.logging.Level;
 
 public class ClientHandler implements Runnable
 {
+
     private final User user;
     private final Socket s;
     private final DataInputStream dis;
@@ -22,6 +23,7 @@ public class ClientHandler implements Runnable
     private final Server server;
     private volatile boolean terminated;
     private ClientHandler partner;
+    private boolean isStreaming;
 
     public ClientHandler(Server server, Socket s, User user, DataInputStream dis, DataOutputStream dos)
     {
@@ -31,6 +33,7 @@ public class ClientHandler implements Runnable
         this.dos = dos;
         this.s = s;
         this.server = server;
+        this.isStreaming = false;
     }
 
     protected User getUser()
@@ -130,7 +133,10 @@ public class ClientHandler implements Runnable
                             if (!userFound)
                             {
                                 // Tell the initiator that the user is not online
-                                ServerMain.LOG.log(Level.INFO, "{0} attempted to connect to {1} but they are not online", new Object[]{user.getUsername(), partnerUsername});
+                                ServerMain.LOG.log(Level.INFO, "{0} attempted to connect to {1} but they are not online", new Object[]
+                                {
+                                    user.getUsername(), partnerUsername
+                                });
                                 PacketStatus ps = new PacketStatus(false, "User is not online");
                                 ps.send(dos);
                             }
@@ -142,6 +148,7 @@ public class ClientHandler implements Runnable
                             {
                                 if (ch.getUser().getUsername().equals(requester))
                                 {
+                                    isStreaming = pc.isAccepted();
                                     this.partner = ch;
                                     pc.send(ch.dos);
                                     break;
@@ -153,8 +160,15 @@ public class ClientHandler implements Runnable
                     }
                     case FRAME:
                     {
-                        PacketFrame pf = new PacketFrame().deserialize(dis);
-                        pf.send(partner.dos);
+                        if (isStreaming)
+                        {
+                            PacketFrame pf = new PacketFrame().deserialize(dis);
+                            pf.send(partner.dos);
+                        }
+                        else
+                        {
+                            new PacketFrame().deserialize(dis);
+                        }
                         break;
                     }
 
@@ -166,23 +180,26 @@ public class ClientHandler implements Runnable
                     }
                     case STOP_STREAMING:
                     {
+                        isStreaming = false;
                         PacketStopStreaming pss = new PacketStopStreaming();
                         pss.sendOnlyType(partner.dos);
+
                         break;
                     }
                 }
             }
             catch (Exception e)
             {
-                ServerMain.LOG.severe("Closing ClientHandler thread for user: " + user.getUsername());
-                ServerMain.LOG.severe(e.toString());
+                ServerMain.LOG.log(Level.SEVERE, "Closing ClientHandler thread for user: {0}", user.getUsername());
                 try
                 {
                     server.logout(user);
+                    break;
                 }
                 catch (SQLException | InterruptedException | IOException ex)
                 {
-                    ServerMain.LOG.severe(e.toString());
+                    ServerMain.LOG.severe(ex.toString());
+                    break;
                 }
             }
         }

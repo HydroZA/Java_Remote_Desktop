@@ -165,12 +165,15 @@ public final class Server
 
         String usersData = "INSERT INTO USERS(\n"
                 + "username,\n"
-                + "pword)\n"
+                + "pword,\n"
+                + "loggedin)\n"
                 + "VALUES\n"
                 + "(\'hydro\',"
-                + "\'26350AA738773C07525F1C0CBA0426B2D27EF51977F4AEC2731A7DE4D7B5FA79\'),"
+                + "\'26350AA738773C07525F1C0CBA0426B2D27EF51977F4AEC2731A7DE4D7B5FA79\',\n"
+                + "0),\n"
                 + "(\'yahmes\',"
-                + "\'C322D8899DFDF70FEC08F4629BBB1E84BBF9291DDE484175DA52428ADDFCFA9F\');";
+                + "\'C322D8899DFDF70FEC08F4629BBB1E84BBF9291DDE484175DA52428ADDFCFA9F\',\n"
+                + "0);";
 
         String friendsData = "INSERT INTO friends (\n"
                 + "userid,\n"
@@ -278,10 +281,8 @@ public final class Server
                 query = "UPDATE USERS SET loggedin=1 WHERE username=\'" + user.getUsername() + "\'";
                 stmt = con.prepareStatement(query);
                 stmt.execute();
-
                 stmt.close();
                 rs.close();
-
                 return true;
             }
             else
@@ -290,14 +291,12 @@ public final class Server
                 rs.close();
                 rs2.close();
                 stmt.close();
-
                 return false;
             }
         }
         else
         {
             rs.close();
-
             return false;
         }
     }
@@ -438,7 +437,6 @@ public final class Server
 
         try
         {
-            ls.getSs().close();
             ls.getCertExchange().close();
             ss.close();
         }
@@ -527,14 +525,14 @@ public final class Server
         PreparedStatement stmt = con.prepareStatement(query);
         ResultSet rs = stmt.executeQuery();
         rs.next();
-        int userID = rs.getInt(1);
-        rs.next();
         int friendID = rs.getInt(1);
+        rs.next();
+        int userID = rs.getInt(1);
         rs.close();
         stmt.close();
 
         // find if entry exists in DB
-        query = "SELECT id FROM friends WHERE userid=" + userID + " AND friendid=" + friendID;
+        query = "SELECT id FROM friends WHERE userid=" + userID + " AND friendID=" + friendID;
         PreparedStatement stmt2 = con.prepareStatement(query);
         ResultSet rs2 = stmt2.executeQuery();
 
