@@ -42,7 +42,7 @@ public class ClientMain
         {
             Client.log.log(Level.SEVERE, "Failed to connect to server {0}", ex.toString());
             System.exit(1);
-        }
+        }               
         
         Runtime.getRuntime().addShutdownHook(new Thread()
         {

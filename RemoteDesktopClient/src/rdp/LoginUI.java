@@ -8,6 +8,8 @@
  */
 package rdp;
 
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -30,12 +32,40 @@ public class LoginUI extends javax.swing.JFrame
     public LoginUI(Client c)
     {
         this.client = c;
-        
-        initComponents();
 
+        initComponents();
+        extraInitComponents();
+    }
+
+    /**
+     * Netbeans does not allow editing of the existing initComponenets(), so I
+     * created my own extra code that is run after it
+     */
+    private void extraInitComponents()
+    {
         // Center the window on the screen and set the default button to Longin
         this.setLocationRelativeTo(null);
         this.getRootPane().setDefaultButton(btnLogin);
+
+        // Tell the server we wish to cancel the login attempt if the window is closed
+        this.addWindowListener(new WindowAdapter()
+        {
+            @Override
+            public void windowClosing(WindowEvent e)
+            {
+                if (!client.isLoggedIn())
+                {
+                    try
+                    {
+                        new PacketCancelLogin().sendOnlyType(client.getDos());
+                    }
+                    catch (Exception ex)
+                    {
+                        Client.log.log(Level.SEVERE, "Unable to negotiate cancel login{0}", ex.toString());
+                    }
+                }
+            }
+        });
     }
 
     @SuppressWarnings("unchecked")
@@ -52,6 +82,7 @@ public class LoginUI extends javax.swing.JFrame
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Remote Desktop Login");
+        setResizable(false);
 
         jLabel1.setText("Username:");
 
@@ -198,7 +229,6 @@ public class LoginUI extends javax.swing.JFrame
      * @throws java.security.UnrecoverableKeyException
      * @throws java.security.KeyManagementException
      */
-   
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnLogin;

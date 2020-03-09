@@ -53,4 +53,23 @@ public class User
     {
         this.friends = friends;
     }
+    
+    private String stringArrayToIndividualLines(String[] in)
+    {
+        StringBuilder out = new StringBuilder();
+        for (String str : in)
+        {
+            out.append(str).append("\n");
+        }
+        
+        return out.toString();
+    }
+    
+    @Override
+    public String toString()
+    {
+        return "Username: " + username
+                + "\nPassword: " + password
+                + "\nFriends: " + stringArrayToIndividualLines(friends);
+    }
 }

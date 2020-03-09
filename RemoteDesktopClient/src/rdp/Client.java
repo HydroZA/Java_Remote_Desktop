@@ -34,7 +34,7 @@ public final class Client
     private MainUI mui;
     private IncomingStreamUI isui;
     private OutgoingStreamUI osui;
-    private IncomingConnectionThread ict;
+    private IncomingDataHandler ict;
 
     // SSL Vars
     private SSLSocket sock;
@@ -156,7 +156,7 @@ public final class Client
         this.user = user;
     }
 
-    protected void setIct(IncomingConnectionThread ict)
+    protected void setIct(IncomingDataHandler ict)
     {
         this.ict = ict;
     }
@@ -194,58 +194,55 @@ public final class Client
 
     protected void connect(LoginUI lui) throws Exception
     {
-        // Connect to server
-        sock = SSLSocketConnector.connect(ch);
 
-        dis = new DataInputStream(sock.getInputStream());
-        dos = new DataOutputStream(sock.getOutputStream());
-
-        sock.addHandshakeCompletedListener((HandshakeCompletedEvent hce) ->
+        for (int i = 0; i <= 3; i++)
         {
-            handshakeSuccessful = true;
-            Client.log.info(
-                    "\n*********** SECURE CONNECTION ESTABLISHED ***********\n"
-                    + "Server IP: " + sock.getInetAddress().toString() + "\n"
-                    + "Security Protocol: " + sock.getEnabledProtocols()[0] + "\n"
-                    + "Cipher Suite: " + sock.getSession().getCipherSuite() + "\n"
-                    //+ "Certificate: " + sock.getSession().getLocalCertificates()[0] + "\n"
-                    + "************ END SECURE CONNECTION STATS ************\n"
-            );
-            ict = new IncomingConnectionThread(dis, lui);
-            Thread t = new Thread(ict);
+            /*Sleep for an exponentially longer time each loop, starting at 0ms
+            * This is to allow the server time to restart after adding our 
+            * certificate
+            */
+            int sleepTimer = (int) Math.floor(Math.pow(100, i) - 1);
+            Thread.sleep(sleepTimer);
 
-            // Let everyone get to know each other
-            ict.setClient(this);
-            this.setIct(ict);
+            // Connect to server
+            sock = SSLSocketConnector.connect(ch);
 
-            // Start IncomingConnectionThread
-            t.start();
-        });
-        try
-        {
-            sock.startHandshake();
-        }
-        catch (SSLHandshakeException e)
-        {
-            Client.log.log(Level.WARNING, "Handshake Failed, Performing Certificate Exchange...");
+            dis = new DataInputStream(sock.getInputStream());
+            dos = new DataOutputStream(sock.getOutputStream());
 
-            performCertificateExchange();
-
-            // Wait for server to restart, then try again, will attempt 5 times
-            for (int i = 0; i <= 4; i++)
+            sock.addHandshakeCompletedListener((HandshakeCompletedEvent hce) ->
             {
-                Thread.sleep(100);
-                connect(lui);
-                if (isHandshakeSuccessful())
-                {
-                    return;
-                }
+                handshakeSuccessful = true;
+                Client.log.info(
+                        "\n*********** SECURE CONNECTION ESTABLISHED ***********\n"
+                        + "Server IP: " + sock.getInetAddress().toString() + "\n"
+                        + "Security Protocol: " + sock.getEnabledProtocols()[0] + "\n"
+                        + "Cipher Suite: " + sock.getSession().getCipherSuite() + "\n"
+                        //+ "Certificate: " + sock.getSession().getLocalCertificates()[0] + "\n"
+                        + "************ END SECURE CONNECTION STATS ************\n"
+                );
+                ict = new IncomingDataHandler(dis, lui);
+                Thread t = new Thread(ict);
 
-                Client.log.warning("Connection failed, retrying in 100ms...");
+                // Let everyone get to know each other
+                ict.setClient(this);
+                this.setIct(ict);
+
+                // Start IncomingConnectionThread
+                t.start();
+            });
+
+            try
+            {
+                sock.startHandshake();
+                return;
             }
-            Client.log.severe("Unable to connect to server");
-            throw new Exception("Connection to server could not be made");
+            catch (SSLHandshakeException e)
+            {
+                performCertificateExchange();
+            }
         }
+        throw new Exception("Connection Timed Out. Failed to connect to server");
     }
 
     private File createConfigFile()

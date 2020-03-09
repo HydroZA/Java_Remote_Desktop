@@ -22,7 +22,7 @@ public class MainUI extends javax.swing.JFrame
 
     private final User user;
     private final Client client;
-    private IncomingConnectionThread ict;
+    private IncomingDataHandler ict;
 
     public MainUI(User user, Client client)
     {
@@ -78,6 +78,7 @@ public class MainUI extends javax.swing.JFrame
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Remote Desktop Client");
+        setResizable(false);
 
         jLabel1.setFont(new java.awt.Font("Dialog", 1, 18)); // NOI18N
         jLabel1.setText("Welcome to the Remote Desktop Client!");
@@ -214,12 +215,12 @@ public class MainUI extends javax.swing.JFrame
         return this.client;
     }
 
-    public IncomingConnectionThread getIncomingConnectionThread()
+    public IncomingDataHandler getIncomingConnectionThread()
     {
         return this.ict;
     }
 
-    public void setIncomingConnectionThread(IncomingConnectionThread ict)
+    public void setIncomingConnectionThread(IncomingDataHandler ict)
     {
         this.ict = ict;
     }
@@ -254,9 +255,15 @@ public class MainUI extends javax.swing.JFrame
 
     private void btnRemoveFriendActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnRemoveFriendActionPerformed
     {//GEN-HEADEREND:event_btnRemoveFriendActionPerformed
+        String friendName = lstFriends.getSelectedValue();
+        if (friendName == null || friendName.equals(""))
+        {
+            return;
+        }
+
         try
         {
-            client.removeFriend(lstFriends.getSelectedValue());
+            client.removeFriend(friendName);
         }
         catch (IOException e)
         {

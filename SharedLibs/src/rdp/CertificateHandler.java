@@ -60,6 +60,42 @@ public class CertificateHandler
         SERVER
     }
 
+    public String getSERVER_IP()
+    {
+        return SERVER_IP;
+    }
+
+    public String getTRUST_STORE_NAME()
+    {
+        return TRUST_STORE_NAME;
+    }
+
+    public String getTRUST_STORE_PWD()
+    {
+        return TRUST_STORE_PWD;
+    }
+
+    public String getKEY_STORE_NAME()
+    {
+        return KEY_STORE_NAME;
+    }
+
+    public String getKEY_STORE_PWD()
+    {
+        return KEY_STORE_PWD;
+    }
+
+    public String getCERTIFICATE()
+    {
+        return CERTIFICATE;
+    }
+    
+    /**
+     * Generates a random string of characters. This method is used to assign
+     * unique filenames to incoming certificates
+     * @param count The length of the random char string 
+     * @return A random string of characters at the specified length
+     */
     private String randomAlphaNumeric(int count)
     {
         StringBuilder builder = new StringBuilder();
@@ -110,7 +146,8 @@ public class CertificateHandler
     }
 
     /**
-     *
+     * Writes a byte array to the disk and returns a File object referencing the 
+     * file
      * @param certificate The certificate to import
      * @return File object referencing the certificate that has been written to
      * disk
@@ -121,12 +158,16 @@ public class CertificateHandler
         String filename = randomAlphaNumeric(5);
         File certFile = new File("certs/" + filename + ".cer");
         FileUtils.writeByteArrayToFile(certFile, certificate);
-
         return certFile;
     }
 
+    /**
+     * This method imports a certificate from a remote partner into the trust
+     * store to enable secure communications
+     * @param certificate File object referencing the certificate
+     * @throws Exception
+     */
     public void importCertificate(File certificate) throws Exception
-    // Import certificate to our trusted certificates keystore
     {
         String command = " -import "
                 + " -v "
@@ -138,12 +179,6 @@ public class CertificateHandler
                 + " -keypass " + TRUST_STORE_PWD + " "
                 + " -storepass " + TRUST_STORE_PWD + " ";
         execute(command);
-        
-        // Restart SSLSocketCreator
-        if (type == SERVER)
-        {
-            
-        }
     }
 
     public CertificateHandler generate() throws Exception
@@ -227,4 +262,5 @@ public class CertificateHandler
         }
         return this;
     }
+   
 }

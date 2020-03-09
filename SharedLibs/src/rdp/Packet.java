@@ -29,6 +29,7 @@ public abstract class Packet<T extends Packet>
         LOGIN,
         REGISTER,
         LOGOUT,
+        CANCEL_LOGIN,
         CONNECT_REQUEST,
         STATUS,
         FRIENDS,
