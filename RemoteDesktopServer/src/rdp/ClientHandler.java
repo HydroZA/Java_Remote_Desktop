@@ -12,7 +12,6 @@ import java.io.*;
 import java.net.*;
 import java.sql.SQLException;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class ClientHandler implements Runnable
 {
@@ -24,17 +23,6 @@ public class ClientHandler implements Runnable
     private final Server server;
     private volatile boolean terminated;
     private ClientHandler partner;
-    private Thread thisThread;
-
-    public Thread getThisThread()
-    {
-        return thisThread;
-    }
-
-    public void setThisThread(Thread thisThread)
-    {
-        this.thisThread = thisThread;
-    }
 
     public ClientHandler(Server server, Socket s, User user, DataInputStream dis, DataOutputStream dos)
     {
@@ -44,7 +32,6 @@ public class ClientHandler implements Runnable
         this.dos = dos;
         this.s = s;
         this.server = server;
-
     }
 
     public User getUser()
@@ -55,6 +42,11 @@ public class ClientHandler implements Runnable
     public DataInputStream getDis()
     {
         return dis;
+    }
+
+    public Socket getSocket()
+    {
+        return s;
     }
 
     @Override
@@ -139,7 +131,7 @@ public class ClientHandler implements Runnable
                             if (!userFound)
                             {
                                 // Tell the initiator that the user is not online
-                                ServerMain.LOG.info(user.getUsername() + " attempted to connect to " + partnerUsername + " but they are not online");
+                                ServerMain.LOG.log(Level.INFO, "{0} attempted to connect to {1} but they are not online", new Object[]{user.getUsername(), partnerUsername});
                                 PacketStatus ps = new PacketStatus(false, "User is not online");
                                 ps.send(dos);
                             }

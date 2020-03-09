@@ -13,9 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.logging.Level;
-import javax.net.ssl.SSLException;
 import javax.swing.JOptionPane;
-import static javax.swing.JOptionPane.INFORMATION_MESSAGE;
 
 /**
  *
@@ -27,24 +25,17 @@ public class LoginUI extends javax.swing.JFrame
     /**
      * Creates new form LoginUI
      */
-    private Client client;
+    private final Client client;
 
-    public LoginUI()
+    public LoginUI(Client c)
     {
+        this.client = c;
+        
         initComponents();
 
         // Center the window on the screen and set the default button to Longin
         this.setLocationRelativeTo(null);
         this.getRootPane().setDefaultButton(btnLogin);
-
-        try
-        {
-            client = new Client();
-        } catch (Exception ex)
-        {
-            Client.log.log(Level.SEVERE, "Unable to create Client object{0}", ex.toString());
-        }
-
     }
 
     @SuppressWarnings("unchecked")
@@ -67,6 +58,13 @@ public class LoginUI extends javax.swing.JFrame
         jLabel2.setText("Password:");
 
         btnRegister.setText("Register");
+        btnRegister.addActionListener(new java.awt.event.ActionListener()
+        {
+            public void actionPerformed(java.awt.event.ActionEvent evt)
+            {
+                btnRegisterActionPerformed(evt);
+            }
+        });
 
         btnLogin.setText("Login");
         btnLogin.addActionListener(new java.awt.event.ActionListener()
@@ -129,7 +127,8 @@ public class LoginUI extends javax.swing.JFrame
         {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             bytesText = digest.digest(plainText.getBytes(StandardCharsets.UTF_8));
-        } catch (NoSuchAlgorithmException e)
+        }
+        catch (NoSuchAlgorithmException e)
         {
             Client.log.severe("Requested hashing algorithm not found");
         }
@@ -159,92 +158,47 @@ public class LoginUI extends javax.swing.JFrame
         User user = new User(username, password);
         client.setUser(user);
 
-        IncomingConnectionThread ict;
-
         try
         {
-            client.connect();
-
-            ict = new IncomingConnectionThread(client.getDis(), this);
-            Thread t = new Thread(ict);
-
-            // Let everyone get to know each other
-            ict.setClient(client);
-            client.setIct(ict);
-
-            // Start IncomingConnectionThread
-            t.start();
-
             client.login();
-        } catch (SSLException e)
-        {
-            try
-            {
-                // Stop the current SSL connection, exchange certs, then try again
-                client.disconnect();
-            } catch (IOException ex)
-            {
-                Client.log.warning("Failed to kill incoming connection thread!");
-            }
+        }
 
-            Client.log.info("Attempting Certificate Exchange...");
-            try
-            {
-                client.performCertificateExchange();
-                JOptionPane.showMessageDialog(this, "Certificate Exchange Successful. Please Retry Login.", "Success", INFORMATION_MESSAGE);
-            } catch (Exception ex)
-            {
-                Client.log.warning("Certificate Exchange Failed");
-            }
-        } catch (Exception e)
+        catch (IOException e)
         {
             JOptionPane.showMessageDialog(this, "Failed to login - Exception");
             Client.log.log(Level.WARNING, "LOGIN FAILED!{0}", e.toString());
         }
     }//GEN-LAST:event_btnLoginActionPerformed
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[])
-    {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
+    private void btnRegisterActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_btnRegisterActionPerformed
+    {//GEN-HEADEREND:event_btnRegisterActionPerformed
+        String password = convertToSHA256(pwfPassword.getText());
+        User user = new User(txfUsername.getText(), password);
+        client.setUser(user);
+
         try
         {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels())
-            {
-                if ("Nimbus".equals(info.getName()))
-                {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException ex)
-        {
-            java.util.logging.Logger.getLogger(LoginUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex)
-        {
-            java.util.logging.Logger.getLogger(LoginUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex)
-        {
-            java.util.logging.Logger.getLogger(LoginUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex)
-        {
-            java.util.logging.Logger.getLogger(LoginUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            client.register();
         }
-        //</editor-fold>
-
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(() ->
+        catch (IOException e)
         {
-            new LoginUI().setVisible(true);
 
-        });
-    }
+            JOptionPane.showMessageDialog(this, "Failed to register - Exception");
+            Client.log.severe("Failed to register due to server error " + e.toString());
+        }
+    }//GEN-LAST:event_btnRegisterActionPerformed
+
+    /**
+     * @param args the command line arguments
+     * @throws java.security.NoSuchAlgorithmException
+     * @throws java.io.IOException
+     * @throws java.io.FileNotFoundException
+     * @throws java.security.KeyStoreException
+     * @throws java.security.cert.CertificateException
+     * @throws java.security.UnrecoverableKeyException
+     * @throws java.security.KeyManagementException
+     */
+   
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnLogin;

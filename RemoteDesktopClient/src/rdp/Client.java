@@ -14,11 +14,18 @@ import java.net.InetAddress;
 import java.io.*;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import javax.imageio.ImageIO;
+import javax.net.ssl.HandshakeCompletedEvent;
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSocket;
 import javax.swing.JOptionPane;
 import static javax.swing.JOptionPane.ERROR_MESSAGE;
@@ -51,20 +58,21 @@ public class Client
     private User user;
     private boolean loggedIn = false;
     private boolean allowingIncomingConnections = false;
+    private static volatile boolean handshakeSuccessful = false;
     private CertificateHandler ch;
-    
+
     // Create Logger for Log Files
-    public static Logger log;  
+    public static Logger log;
 
     // No-Params Constructor
     public Client() throws FileNotFoundException, UnknownHostException, Exception
     {
         Client.log = Logger.getLogger("Client");
-        FileHandler fh = new FileHandler ("logs/client.log");
+        FileHandler fh = new FileHandler("logs/client.log");
         SimpleFormatter sf = new SimpleFormatter();
         log.addHandler(fh);
         fh.setFormatter(sf);
-                
+
         ConfigParser cp;
         try
         {
@@ -105,6 +113,7 @@ public class Client
             ch = ch.generate();
             log.info("Generated TLS Certificate");
         }
+
     }
 
     public boolean isAllowingIncomingConnections()
@@ -116,7 +125,7 @@ public class Client
     {
         this.allowingIncomingConnections = allowingIncomingConnections;
     }
-    
+
     public MainUI getMui()
     {
         return mui;
@@ -184,7 +193,19 @@ public class Client
         return this.dos;
     }
 
-    public void connect() throws Exception
+    public static boolean isHandshakeSuccessful()
+    {
+        return handshakeSuccessful;
+    }
+
+    public void connect(LoginUI lui) throws SSLHandshakeException,
+            FileNotFoundException,
+            NoSuchAlgorithmException,
+            IOException,
+            KeyStoreException,
+            CertificateException,
+            UnrecoverableKeyException,
+            KeyManagementException
     {
         // Connect to server
         SSLSocketConnector ssc = new SSLSocketConnector();
@@ -201,15 +222,59 @@ public class Client
         dis = new DataInputStream(sock.getInputStream());
         dos = new DataOutputStream(sock.getOutputStream());
 
-        log.info(
-                "\n*********** SECURE CONNECTION ESTABLISHED ***********\n"
-                + "Server IP: " + sock.getInetAddress().toString() + "\n"
-                + "Username: " + user.getUsername() + "\n"
-                + "Security Protocol: " + sock.getEnabledProtocols()[0] + "\n"
-                + "Cipher Suite: " + sock.getSession().getCipherSuite() + "\n"
-                //+ "Certificate: " + sock.getSession().getLocalCertificates()[0] + "\n"
-                + "************ END SECURE CONNECTION STATS ************\n"
-        );
+        sock.addHandshakeCompletedListener((HandshakeCompletedEvent hce) ->
+        {
+            handshakeSuccessful = true;
+            Client.log.info(
+                    "\n*********** SECURE CONNECTION ESTABLISHED ***********\n"
+                    + "Server IP: " + sock.getInetAddress().toString() + "\n"
+                    + "Security Protocol: " + sock.getEnabledProtocols()[0] + "\n"
+                    + "Cipher Suite: " + sock.getSession().getCipherSuite() + "\n"
+                    //+ "Certificate: " + sock.getSession().getLocalCertificates()[0] + "\n"
+                    + "************ END SECURE CONNECTION STATS ************\n"
+            );
+            ict = new IncomingConnectionThread(dis, lui);
+            Thread t = new Thread(ict);
+
+            // Let everyone get to know each other
+            ict.setClient(this);
+            this.setIct(ict);
+
+            // Start IncomingConnectionThread
+            t.start();
+        });
+        try
+        {
+            sock.startHandshake();
+        }
+        catch (SSLHandshakeException e)
+        {
+            Client.log.log(Level.WARNING, "Handshake Failed, Performing Certificate Exchange...");
+            try
+            {
+                performCertificateExchange();
+
+                // Wait for server to restart, then try again, will attempt 5 times
+                for (int i = 0; i <= 4; i++)
+                {
+                    Thread.sleep(100);
+                    connect(lui);
+                    if (isHandshakeSuccessful())
+                    {
+                        return;
+                    }
+
+                    Client.log.warning("Connection failed, retrying in 100ms...");
+                }
+                Client.log.severe("Unable to connect to server. Exiting...");
+                System.exit(1);
+            }
+            catch (Exception ex)
+            {
+                Client.log.log(Level.SEVERE, "Failed to connect to server {0}", ex.toString());
+                System.exit(1);
+            }
+        }
     }
 
     private File createConfigFile()
@@ -248,14 +313,14 @@ public class Client
             Socket ce = new Socket(SERVER_IP, 123);
             DataInputStream tempDis = new DataInputStream(ce.getInputStream());
             DataOutputStream tempDos = new DataOutputStream(ce.getOutputStream());
-            
+
             PacketCertificate pc = new PacketCertificate().deserialize(tempDis);
             File certFile = ch.writeCertificateToDisk(pc.getCert());
             ch.importCertificate(certFile);
-            
+
             pc = new PacketCertificate(FileUtils.readFileToByteArray(ch.getCertificate()));
             pc.serialize(tempDos);
-            
+
             ce.close();
         }
         catch (IOException e)
@@ -263,10 +328,10 @@ public class Client
             log.info("Error During Certificate Exchange");
         }
     }
-    
 
     public void disconnect() throws IOException
     {
+        logout();
         sock.close();
     }
 
@@ -274,6 +339,12 @@ public class Client
     {
         PacketLogin pl = new PacketLogin(this.user.getUsername(), this.user.getPassword());
         pl.send(dos);
+    }
+
+    public void register() throws IOException
+    {
+        PacketRegister pr = new PacketRegister(user.getUsername(), user.getPassword());
+        pr.send(dos);
     }
 
     public void logout() throws IOException
@@ -314,22 +385,22 @@ public class Client
     {
         return osui;
     }
-    
+
     public void loginSuccessful(LoginUI lui)
     {
         log.info("Login Succeeded");
         JOptionPane.showMessageDialog(lui, "Logged In Successfully", "Login Attempt", INFORMATION_MESSAGE);
-                               
+
         // Spawn MainUI and dispose LoginUI
         mui = new MainUI(user, this);
         ict.setMainUI(mui);
         mui.setIncomingConnectionThread(ict);
         setMui(mui);
-        
+
         mui.setVisible(true);
         lui.dispose();
     }
-    
+
     public void loginFailed(LoginUI lui) throws IOException
     {
         JOptionPane.showMessageDialog(lui, "Login Failed", "Login Attempt", ERROR_MESSAGE);

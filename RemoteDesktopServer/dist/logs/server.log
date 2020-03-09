@@ -1,26 +1,36 @@
-Mar 03, 2020 3:33:32 PM rdp.Server <init>
-WARNING: Config File not Found
-Mar 03, 2020 3:33:32 PM rdp.Server <init>
-INFO: Creating Config File...
-Mar 03, 2020 3:33:32 PM rdp.Server <init>
-INFO: Created Config File
-Mar 03, 2020 3:33:32 PM rdp.Server <init>
-WARNING: TLS Certificate Not Found, Generating...
-Mar 03, 2020 3:33:34 PM rdp.Server <init>
-INFO: Generated TLS Certificate
-Mar 03, 2020 3:33:34 PM rdp.Server <init>
-INFO: rdp.CertificateHandler@5ce65a89
-Mar 03, 2020 3:33:34 PM rdp.Server <init>
-INFO: Creating Database...
-Mar 03, 2020 3:33:34 PM rdp.Server <init>
-INFO: Database Created
-Mar 03, 2020 3:33:48 PM rdp.LoginServer performCertificateExchange
-INFO: Incoming connection: /127.0.0.1
-Mar 03, 2020 3:33:48 PM rdp.LoginServer run
-INFO: Certificate Exchange Successful
-Mar 03, 2020 3:33:48 PM rdp.LoginServer run
-SEVERE: Socket exception in LoginServer
-Mar 03, 2020 3:33:49 PM rdp.LoginServer lambda$run$0
+Mar 09, 2020 10:28:22 AM rdp.Server <init>
+INFO: Found Config File
+Mar 09, 2020 10:28:22 AM rdp.Server <init>
+INFO: TLS Certificate Found
+Mar 09, 2020 10:28:22 AM rdp.Server <init>
+INFO: rdp.CertificateHandler@4f3f5b24
+Mar 09, 2020 10:28:22 AM rdp.ServerMain main
+INFO: 
+Select an action:
+	1) Start Server
+	2) Change IP and Port
+	3) Restart Server
+	4) Stop Server
+	5) Recreate Database
+	6) Print Active Clients
+	7) Exit
+
+Mar 09, 2020 10:28:24 AM rdp.ServerMain main
+INFO: Starting Server...
+Mar 09, 2020 10:28:24 AM rdp.ServerMain main
+INFO: Server started on IP: 127.0.0.1, Port: 1234
+Mar 09, 2020 10:28:24 AM rdp.ServerMain main
+INFO: 
+Select an action:
+	1) Start Server
+	2) Change IP and Port
+	3) Restart Server
+	4) Stop Server
+	5) Recreate Database
+	6) Print Active Clients
+	7) Exit
+
+Mar 09, 2020 10:28:26 AM rdp.LoginServer lambda$run$0
 INFO: 
 *********** SECURE CONNECTION ESTABLISHED ***********
 Client IP: /127.0.0.1
@@ -28,21 +38,24 @@ Security Protocol: TLSv1.2
 Cipher Suite: TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
 ************ END SECURE CONNECTION STATS ************
 
-Mar 03, 2020 3:33:49 PM rdp.LoginServer run
-INFO: Successful login to account 'hydro' by 2b4fad4f[TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384: Socket[addr=/127.0.0.1,port=56595,localport=1234]]
-Mar 03, 2020 3:34:06 PM rdp.LoginServer lambda$run$0
+Mar 09, 2020 10:28:31 AM rdp.LoginServer run
+INFO: Successful login to account 'hydro' by 48e68bf[TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384: Socket[addr=/127.0.0.1,port=50141,localport=1234]]
+Mar 09, 2020 10:28:34 AM rdp.Server logout
+INFO: hydro logged out
+Mar 09, 2020 10:28:45 AM rdp.ServerMain main
+WARNING: Please choose a valid option
+Mar 09, 2020 10:28:45 AM rdp.ServerMain main
 INFO: 
-*********** SECURE CONNECTION ESTABLISHED ***********
-Client IP: /127.0.0.1
-Security Protocol: TLSv1.2
-Cipher Suite: TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
-************ END SECURE CONNECTION STATS ************
+Select an action:
+	1) Start Server
+	2) Change IP and Port
+	3) Restart Server
+	4) Stop Server
+	5) Recreate Database
+	6) Print Active Clients
+	7) Exit
 
-Mar 03, 2020 3:34:06 PM rdp.LoginServer run
-INFO: Successful login to account 'yahmes' by 18fe3fe6[TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384: Socket[addr=/127.0.0.1,port=56601,localport=1234]]
-Mar 03, 2020 3:34:23 PM rdp.Server logout
-INFO: yahmes logged out
-Mar 03, 2020 3:34:27 PM rdp.ClientHandler run
-INFO: hydro attempted to connect to yahmes but they are not online
-Mar 03, 2020 3:34:48 PM rdp.LoginServer run
+Mar 09, 2020 10:28:45 AM rdp.LoginServer run
 SEVERE: Socket exception in LoginServer
+Mar 09, 2020 10:28:45 AM rdp.Server killServer
+INFO: Server Shutdown

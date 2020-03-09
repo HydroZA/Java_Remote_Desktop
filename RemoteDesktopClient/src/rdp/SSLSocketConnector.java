@@ -11,10 +11,16 @@ package rdp;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
+import java.security.KeyManagementException;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 import java.util.Objects;
 
 import javax.net.SocketFactory;
@@ -30,9 +36,22 @@ public class SSLSocketConnector
     {
         
     }
-    public SSLSocket connect(InetAddress serverHost, int serverPort,
-            String tlsVersion, String trustStoreName, char[] trustStorePassword,
-            String keyStoreName, char[] keyStorePassword) throws Exception
+    public SSLSocket connect(
+            InetAddress serverHost, 
+            int serverPort,
+            String tlsVersion, 
+            String trustStoreName, 
+            char[] trustStorePassword,
+            String keyStoreName, 
+            char[] keyStorePassword) 
+            throws 
+                FileNotFoundException, 
+                NoSuchAlgorithmException, 
+                IOException, 
+                KeyStoreException, 
+                CertificateException, 
+                UnrecoverableKeyException, 
+                KeyManagementException
     {
 
         Objects.requireNonNull(tlsVersion, "TLS version is mandatory");

@@ -9,6 +9,8 @@
 package rdp;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
+import java.util.logging.Level;
 import javax.swing.JOptionPane;
 
 /**
@@ -274,7 +276,7 @@ public class MainUI extends javax.swing.JFrame
             JOptionPane.showMessageDialog(this, "Unable to connect");
             Client.log.severe("Failed to ask permission to connect");
         }
-        catch(NullPointerException e)
+        catch (NullPointerException e)
         {
             Client.log.warning("No user selected");
         }
@@ -284,20 +286,20 @@ public class MainUI extends javax.swing.JFrame
     {//GEN-HEADEREND:event_mnuLogoutActionPerformed
         try
         {
-            if (client.isLoggedIn())
-            {
-                client.logout();
-                ict.getDis().close();
-            }
+            client.disconnect();
+            LoginUI lui = new LoginUI(client);
+            lui.setVisible(true);
+            client.connect(lui);
+            this.dispose();
         }
-        catch (IOException e)
+        catch (UnknownHostException ex)
         {
-            Client.log.severe("Exception while attempting to logout");
+            Client.log.log(Level.SEVERE, "Error during logout: {0}", ex.toString());
         }
-
-        LoginUI lui = new LoginUI();
-        lui.setVisible(true);
-        this.dispose();
+        catch (Exception ex)
+        {
+            Client.log.log(Level.SEVERE, "Error during logout: {0}", ex.toString());
+        }
     }//GEN-LAST:event_mnuLogoutActionPerformed
 
     private void mnuExitActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_mnuExitActionPerformed

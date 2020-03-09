@@ -12,7 +12,6 @@ import java.io.*;
 import java.net.*;
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Level;
 import javax.net.ssl.SSLServerSocket;
@@ -29,7 +28,7 @@ public final class Server
     private final char[] TRUST_STORE_PWD;
     private final String KEY_STORE_NAME;
     private final char[] KEY_STORE_PWD;
-    private String CERTIFICATE;
+    private final String CERTIFICATE;
     private String TLS_VERSION = "TLSv1.2";
 
     // Misc Vars
@@ -93,7 +92,7 @@ public final class Server
         }
     }
 
-    public CertificateHandler getCh()
+    public CertificateHandler getCertificateHandler()
     {
         return ch;
     }
@@ -220,6 +219,40 @@ public final class Server
         con.close();
     }
 
+    public boolean register(User user) throws SQLException
+    {
+        String username = user.getUsername();
+        String pword = user.getPassword();
+
+        String query = "SELECT EXISTS ( SELECT 1 FROM USERS WHERE username=\'" + username + "\')";
+        PreparedStatement stmt = con.prepareStatement(query);
+
+        //find if username already exists
+        ResultSet rs = stmt.executeQuery();
+
+        if (rs.getInt(1) == 0)
+        {
+            // Username does not exist, add user to db
+            rs.close();
+            stmt.close();
+
+            query = "INSERT INTO USERS (username, pword) VALUES (\'" + username + "\', \'" + pword + "\')";
+            try (PreparedStatement stmt2 = con.prepareStatement(query))
+            {
+                stmt2.execute();
+            }
+            ServerMain.LOG.info("Created new user: " + username);
+            return true;
+        }
+        else
+        {
+            // Username already exists
+            ServerMain.LOG.info(": Failed to create new user using name: " + username);
+            return false;
+        }
+
+    }
+
     public boolean login(User user) throws SQLException, InterruptedException
     {
         String query = "SELECT 1 FROM USERS WHERE EXISTS (SELECT * FROM USERS WHERE username=\'" + user.getUsername() + "\' AND pword=\'" + user.getPassword() + "\');";
@@ -310,14 +343,14 @@ public final class Server
 
         // Remove user from Users vector
         users.remove(user);
-        
+
         // Very hacky and slow, look into improvements
-        for (ClientHandler ch : clientHandlers)
+        for (ClientHandler c : clientHandlers)
         {
-            if (ch.getUser().getUsername().equals(user.getUsername()))
+            if (c.getUser().getUsername().equals(user.getUsername()))
             {
-                ch.getDis().close();
-                clientHandlers.remove(ch);
+                c.getSocket().close();
+                clientHandlers.remove(c);
 
                 break;
             }
@@ -330,41 +363,32 @@ public final class Server
         String[] usernames = new String[clientHandlers.size()];
 
         int i = 0;
-        for (ClientHandler ch : clientHandlers)
+        for (ClientHandler c : clientHandlers)
         {
-            usernames[i] = ch.getUser().getUsername();
+            usernames[i] = c.getUser().getUsername();
             i++;
         }
 
         return usernames;
     }
 
-    public void logoutAllUsers() throws SQLException, InterruptedException, IOException
+    public void logoutAllUsers() throws SQLException, IOException
     {
-        // Update DB to show logged out user
-        for (User usr : users)
+        // Close all the sockets for the active users
+        for (ClientHandler c : clientHandlers)
         {
-            String query = "UPDATE USERS SET loggedin=0 WHERE username=\'" + usr.getUsername() + "\'";
+            c.getSocket().close();
+
+            String query = "UPDATE USERS SET loggedin=0 WHERE username=\'" + c.getUser().getUsername() + "\'";
             try (PreparedStatement stmt = con.prepareStatement(query))
             {
                 stmt.execute();
             }
         }
-        
-        // Close all the sockets for the active users
-        for (ClientHandler c : clientHandlers)
-        {
-            c.getDis().close();
-        }
-        
+
+        // Clear Vectors
         users.clear();
         clientHandlers.clear();
-    }
-
-    public boolean register(User user)
-    {
-        // add user to DB
-        return false;
     }
 
     public String[] getFriends(User user) throws SQLException
@@ -410,6 +434,9 @@ public final class Server
 
     public void killServer() throws IOException, SQLException, InterruptedException
     {
+        // logout all users
+        logoutAllUsers();
+
         try
         {
             ls.getSs().close();
@@ -420,9 +447,6 @@ public final class Server
         {
             ServerMain.LOG.severe(e.toString());
         }
-
-        // logout all users
-        logoutAllUsers();
 
         ServerMain.LOG.info("Server Shutdown");
     }
@@ -575,7 +599,6 @@ public final class Server
         // This thread handles incoming connections, gets the users friends and then hands the client off to a ClientHandler thread
         ls = new LoginServer(this, ss);
         Thread t = new Thread(ls);
-        ls.setThisThread(t);
         t.start();
 
     }

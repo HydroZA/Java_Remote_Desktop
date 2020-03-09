@@ -8,6 +8,7 @@
  */
 package rdp;
 
+import java.awt.HeadlessException;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.SocketException;
@@ -19,6 +20,7 @@ import static javax.swing.JOptionPane.YES_NO_OPTION;
 
 public class IncomingConnectionThread implements Runnable
 {
+
     private volatile boolean terminated;
     private final DataInputStream dis;
     private MainUI mui;
@@ -26,18 +28,7 @@ public class IncomingConnectionThread implements Runnable
     private IncomingStreamUI isui;
     private OutgoingStreamUI osui;
     private Client client;
-    private Thread LoginThread;
 
-    public Thread getLoginThread()
-    {
-        return LoginThread;
-    }
-
-    public void setLoginThread(Thread LoginThread)
-    {
-        this.LoginThread = LoginThread;
-    }
-    
     public IncomingConnectionThread(DataInputStream dis, MainUI parentUI)
     {
         this.dis = dis;
@@ -46,7 +37,7 @@ public class IncomingConnectionThread implements Runnable
     }
 
     public IncomingConnectionThread(DataInputStream dis, LoginUI lui)
-    {       
+    {
         this.dis = dis;
         this.lui = lui;
         this.terminated = false;
@@ -61,7 +52,7 @@ public class IncomingConnectionThread implements Runnable
     {
         return this.dis;
     }
-    
+
     public void setMainUI(MainUI parentUI)
     {
         this.mui = parentUI;
@@ -76,12 +67,12 @@ public class IncomingConnectionThread implements Runnable
     {
         this.client = client;
     }
-    
+
     public void terminate()
     {
         this.terminated = true;
     }
-    
+
     private boolean intToBoolean(int i, int trueValue)
     {
         switch (trueValue)
@@ -94,7 +85,7 @@ public class IncomingConnectionThread implements Runnable
                 return i == 1;
         }
     }
-    
+
     @Override
     public void run()
     {
@@ -120,7 +111,7 @@ public class IncomingConnectionThread implements Runnable
                     {
                         PacketStatus ps = new PacketStatus().deserialize(dis);
                         String message = ps.getMessage();
-                        
+
                         switch (message)
                         {
                             case "Sucessfully logged in":
@@ -131,11 +122,21 @@ public class IncomingConnectionThread implements Runnable
                                 client.setLoggedIn(false);
                                 client.loginFailed(lui);
                                 break;
+                            case "Registered Successfully":
+                            {
+                                JOptionPane.showMessageDialog(lui, message, "Sucessful", INFORMATION_MESSAGE);
+                                break;
+                            }
+                            case "Failed to Register":
+                            {
+                                JOptionPane.showMessageDialog(lui, message, "Failed", ERROR_MESSAGE);
+                                break;
+                            }
                             default:
                                 JOptionPane.showMessageDialog(this.mui, message, ps.isSuccess() ? "Sucessful" : "Failed", ps.isSuccess() ? INFORMATION_MESSAGE : ERROR_MESSAGE);
                                 break;
                         }
-                        
+
                         break;
                     }
                     case FRIENDS:
@@ -148,7 +149,7 @@ public class IncomingConnectionThread implements Runnable
                     case CONNECT_REQUEST:
                     {
                         PacketConnectRequest pc = new PacketConnectRequest().deserialize(dis);
-                                                                    
+
                         // If the packet we received is a response to our request->
                         if (pc.getStatus() == PacketConnectRequest.Status.ASSIGNED)
                         {
@@ -184,7 +185,7 @@ public class IncomingConnectionThread implements Runnable
                             {
                                 pc.setAccepted(false);
                             }
-                            
+
                             pc.setStatus(PacketConnectRequest.Status.ASSIGNED);
                             pc.send(client.getDos());
                         }
@@ -202,11 +203,12 @@ public class IncomingConnectionThread implements Runnable
                     }
                     case STOP_STREAMING:
                     {
-                        
+
                         try
                         {
                             if (osui.isVisible())
                             {
+                                osui.setTerminated(true);
                                 client.resetToMainUI();
                             }
                         }
@@ -223,13 +225,16 @@ public class IncomingConnectionThread implements Runnable
                     }
                 }
             }
-            catch (SocketException e)
+            /* Socket exception has to be handled seperately as it is a subclass of IOException
+             * so can not be in the same catch block 
+             */
+            catch (SocketException e) 
             {
                 terminated = true;
             }
-            catch (IOException e)
+            catch (IOException | HeadlessException e)
             {
-                terminated = true;                
+                terminated = true;
             }
         }
         Client.log.info("IncomingConnectionThread Terminated");
