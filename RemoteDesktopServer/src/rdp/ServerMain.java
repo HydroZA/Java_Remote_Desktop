@@ -12,12 +12,9 @@ import java.io.*;
 import java.net.*;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.logging.FileHandler;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
-import org.sqlite.SQLiteException;
 
 public class ServerMain
 {
@@ -67,16 +64,9 @@ public class ServerMain
         {
             server = new Server();
         }
-        catch (SQLiteException e)
-        {
-            LOG.severe("Failed to create SQLite3 Database! " + e.toString());
-            System.exit(1);
-        }
         catch (Exception e)
         {
             LOG.info("Failed to create Server object");
-            e.printStackTrace();
-            System.exit(1);
         }
 
         while (true)
@@ -119,10 +109,12 @@ public class ServerMain
                         catch (BindException | UnknownHostException e)
                         {
                             LOG.severe("Unable to bind to IP: " + server.getSERVER_IP().getHostName() + ", Port: " + server.getSERVER_PORT());
+                            LOG.info(e.toString());
                         }
                         catch (IOException e)
                         {
                             LOG.severe("Unable to bind to IP: " + server.getSERVER_IP().getHostName() + ", Port: " + server.getSERVER_PORT());
+                            LOG.info(e.toString());
                         }
                     }
                     else
@@ -141,6 +133,7 @@ public class ServerMain
                     catch (UnknownHostException e)
                     {
                         LOG.warning("Invalid IP. Please try again");
+                        LOG.warning(e.toString());
                         break;
                     }
 
@@ -158,11 +151,11 @@ public class ServerMain
                         serverRunning = false;
                         server.startLoginServer();
                         serverRunning = true;
-                        LOG.log(Level.INFO, "Server started on IP: {0}, Port: {1}", new Object[]{server.getSERVER_IP().getHostName(), server.getSERVER_PORT()});
+                        LOG.info("Server started on IP: " + server.getSERVER_IP().getHostName() + ", Port: " + server.getSERVER_PORT());
                     }
                     catch (BindException | UnknownHostException ex)
                     {
-                        LOG.log(Level.SEVERE, "Unable to bind to IP: {0}, Port: {1}", new Object[]{server.getSERVER_IP().getHostName(), server.getSERVER_PORT()});
+                        LOG.severe("Unable to bind to IP: " + server.getSERVER_IP().getHostName() + ", Port: " + server.getSERVER_PORT());
                         LOG.severe(ex.toString());
                     }
                     catch (SQLException | IOException | InterruptedException e)
@@ -211,7 +204,13 @@ public class ServerMain
                     }
                     break;
                 case 6:
-                    LOG.log(Level.INFO, "ACTIVE USERS: {0}", Arrays.toString(server.getLoggedInUsers()));
+                    String[] activeUsers = server.getLoggedInUsers();
+
+                    LOG.info("ACTIVE USERS:");
+                    for (String user : activeUsers)
+                    {
+                        LOG.info(user);
+                    }
                     break;
                 case 7:
                     LOG.info("Exiting Server...");
@@ -221,5 +220,6 @@ public class ServerMain
                     break;
             }
         }
+
     }
 }

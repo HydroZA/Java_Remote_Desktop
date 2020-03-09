@@ -87,7 +87,6 @@ public class LoginServer implements Runnable
     @Override
     public void run()
     {
-        ServerMain.LOG.info("LoginServer Started");
         while (true)
         {
             try
@@ -104,9 +103,9 @@ public class LoginServer implements Runnable
                             + "************ END SECURE CONNECTION STATS ************\n"
                     );
                 });
-
+                
                 s.startHandshake();
-
+                
                 DataInputStream dis = new DataInputStream(s.getInputStream());
                 DataOutputStream dos = new DataOutputStream(s.getOutputStream());
 
@@ -166,22 +165,16 @@ public class LoginServer implements Runnable
                         ps.send(dos);
                         break;
                     }
-                    case CANCEL_LOGIN:
-                    {
-                        ServerMain.LOG.log(Level.INFO, "Client cancelled login atttempt: {0}", s.toString());
-                        s.close();
-                        continue;
-                    }
                     default:
                     {
                         // Ignore the packet as it's not meant for this thread
                         ServerMain.LOG.warning("Login thread got invalid packet type");
+                        break;
                     }
                 }
             }
             catch (SSLHandshakeException e)
             {
-                ServerMain.LOG.info("Attempting a Certificate Exchange");
                 try
                 {
                     performCertificateExchange();
@@ -192,24 +185,24 @@ public class LoginServer implements Runnable
                 }
                 catch (Exception ex)
                 {
-                    ServerMain.LOG.warning("Certificate Exchange Failed");
-                    ServerMain.LOG.info(ex.toString());
+                    ServerMain.LOG.severe("Connection Failed");
                 }
             }
             catch (SocketException e)
             {
                 ServerMain.LOG.severe("Socket exception in LoginServer");
-                ServerMain.LOG.info(e.toString());
-                break;
+                ServerMain.setServerRunning(false);
+                
             }
 
             catch (IOException | InterruptedException | SQLException e)
             {
+                ServerMain.setServerRunning(false);
                 ServerMain.LOG.severe(e.toString());
                 break;
             }
+
         }
-        ServerMain.LOG.warning("LoginServer Closed");
     }
 
 }
