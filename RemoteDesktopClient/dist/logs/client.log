@@ -1,6 +1,10 @@
-Mar 09, 2020 10:28:26 AM rdp.Client <init>
-INFO: Config File Found
-Mar 09, 2020 10:28:26 AM rdp.Client <init>
+Mar 09, 2020 11:48:10 AM rdp.Client <init>
+WARNING: Config file not found
+Mar 09, 2020 11:48:10 AM rdp.Client <init>
+INFO: Creating Config File...
+Mar 09, 2020 11:48:10 AM rdp.Client <init>
+INFO: Created Config File
+Mar 09, 2020 11:48:10 AM rdp.Client <init>
 INFO: Loaded following params from config file:
 SERVER_IP: /127.0.0.1
 SERVER_PORT: 1234
@@ -8,11 +12,15 @@ TRUST_STORE_NAME: truststore
 TRUST_STORE_PWD: [a, b, c, 1, 2, 3]
 KEY_STORE_NAME: keystore
 KEY_STORE_PWD: [a, b, c, 1, 2, 3]
-Mar 09, 2020 10:28:26 AM rdp.Client <init>
-INFO: TLS Certificate Found
-Mar 09, 2020 10:28:26 AM rdp.ClientMain main
-INFO: Waiting for handshake with server to complete...
-Mar 09, 2020 10:28:26 AM rdp.Client lambda$connect$0
+Mar 09, 2020 11:48:10 AM rdp.Client <init>
+WARNING: TLS Certificate Not Found, Generating...
+Mar 09, 2020 11:48:12 AM rdp.Client <init>
+INFO: Generated TLS Certificate
+Mar 09, 2020 11:48:13 AM rdp.Client connect
+WARNING: Handshake Failed, Performing Certificate Exchange...
+Mar 09, 2020 11:48:13 AM rdp.Client connect
+WARNING: Connection failed, retrying in 100ms...
+Mar 09, 2020 11:48:13 AM rdp.Client lambda$connect$0
 INFO: 
 *********** SECURE CONNECTION ESTABLISHED ***********
 Server IP: /127.0.0.1
@@ -20,7 +28,5 @@ Security Protocol: TLSv1.2
 Cipher Suite: TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
 ************ END SECURE CONNECTION STATS ************
 
-Mar 09, 2020 10:28:26 AM rdp.IncomingConnectionThread run
+Mar 09, 2020 11:48:13 AM rdp.IncomingConnectionThread run
 INFO: IncomingConnectionThread Initiated
-Mar 09, 2020 10:28:31 AM rdp.Client loginSuccessful
-INFO: Login Succeeded

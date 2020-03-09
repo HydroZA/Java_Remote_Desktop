@@ -33,7 +33,7 @@ public class ClientMain
         {
             // Connect to the server
             client.connect(lui);
-            
+
             Client.log.info("Waiting for handshake with server to complete...");
             
             lui.setVisible(true);

@@ -14,11 +14,6 @@ import java.net.InetAddress;
 import java.io.*;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,7 +27,7 @@ import static javax.swing.JOptionPane.ERROR_MESSAGE;
 import static javax.swing.JOptionPane.INFORMATION_MESSAGE;
 import org.apache.commons.io.FileUtils;
 
-public class Client
+public final class Client
 {
 
     // Parent UI's
@@ -61,10 +56,10 @@ public class Client
     private CertificateHandler ch;
 
     // Create Logger for Log Files
-    public static Logger log;
+    protected static Logger log;
 
     // No-Params Constructor
-    public Client() throws FileNotFoundException, UnknownHostException, Exception
+    protected Client() throws FileNotFoundException, UnknownHostException, Exception
     {
         Client.log = Logger.getLogger("Client");
         FileHandler fh = new FileHandler("logs/client.log");
@@ -115,89 +110,89 @@ public class Client
 
     }
 
-    public boolean isAllowingIncomingConnections()
+    protected boolean isAllowingIncomingConnections()
     {
         return allowingIncomingConnections;
     }
 
-    public void setAllowingIncomingConnections(boolean allowingIncomingConnections)
+    protected void setAllowingIncomingConnections(boolean allowingIncomingConnections)
     {
         this.allowingIncomingConnections = allowingIncomingConnections;
     }
 
-    public MainUI getMui()
+    protected MainUI getMui()
     {
         return mui;
     }
 
-    public void setMui(MainUI mui)
+    protected void setMui(MainUI mui)
     {
         this.mui = mui;
     }
 
-    public boolean isLoggedIn()
+    protected boolean isLoggedIn()
     {
         return loggedIn;
     }
 
-    public void setLoggedIn(boolean loggedIn)
+    protected void setLoggedIn(boolean loggedIn)
     {
         this.loggedIn = loggedIn;
     }
 
     // Mutators
-    public void setServerIP(InetAddress serverIP)
+    protected void setServerIP(InetAddress serverIP)
     {
         this.SERVER_IP = serverIP;
     }
 
-    public void setPort(int port)
+    protected void setPort(int port)
     {
         this.SERVER_PORT = port;
     }
 
-    public void setUser(User user)
+    protected void setUser(User user)
     {
         this.user = user;
     }
 
-    public void setIct(IncomingConnectionThread ict)
+    protected void setIct(IncomingConnectionThread ict)
     {
         this.ict = ict;
     }
 
     // Accessors
-    public InetAddress getServerIP()
+    protected InetAddress getServerIP()
     {
         return this.SERVER_IP;
     }
 
-    public int getServerPort()
+    protected int getServerPort()
     {
         return this.SERVER_PORT;
     }
 
-    public User getUser()
+    protected User getUser()
     {
         return this.user;
     }
 
-    public DataInputStream getDis()
+    protected DataInputStream getDis()
     {
         return this.dis;
     }
 
-    public DataOutputStream getDos()
+    protected DataOutputStream getDos()
     {
         return this.dos;
     }
 
-    public static boolean isHandshakeSuccessful()
+    protected static boolean isHandshakeSuccessful()
     {
         return handshakeSuccessful;
     }
 
-    public void connect(LoginUI lui) throws Exception
+    protected void connect(LoginUI lui) throws Exception
     {
         // Connect to server
         sock = SSLSocketConnector.connect(ch);
@@ -233,30 +228,23 @@ public class Client
         catch (SSLHandshakeException e)
         {
             Client.log.log(Level.WARNING, "Handshake Failed, Performing Certificate Exchange...");
-            try
-            {
-                performCertificateExchange();
 
-                // Wait for server to restart, then try again, will attempt 5 times
-                for (int i = 0; i <= 4; i++)
+            performCertificateExchange();
+
+            // Wait for server to restart, then try again, will attempt 5 times
+            for (int i = 0; i <= 4; i++)
+            {
+                Thread.sleep(100);
+                connect(lui);
+                if (isHandshakeSuccessful())
                 {
-                    Thread.sleep(100);
-                    connect(lui);
-                    if (isHandshakeSuccessful())
-                    {
-                        return;
-                    }
-
-                    Client.log.warning("Connection failed, retrying in 100ms...");
+                    return;
                 }
-                Client.log.severe("Unable to connect to server");
-                throw new Exception("Connection to server could not be made");
+
+                Client.log.warning("Connection failed, retrying in 100ms...");
             }
-            catch (Exception ex)
-            {
-                Client.log.log(Level.SEVERE, "Failed to connect to server {0}", ex.toString());
-                System.exit(1);
-            }
+            Client.log.severe("Unable to connect to server");
+            throw new Exception("Connection to server could not be made");
         }
     }
 
@@ -289,7 +277,7 @@ public class Client
         return conf;
     }
 
-    public void performCertificateExchange() throws Exception
+    protected void performCertificateExchange() throws Exception
     {
         try
         {
@@ -312,25 +300,25 @@ public class Client
         }
     }
 
-    public void disconnect() throws IOException
+    protected void disconnect() throws IOException
     {
         logout();
         sock.close();
     }
 
-    public void login() throws IOException
+    protected void login() throws IOException
     {
         PacketLogin pl = new PacketLogin(this.user.getUsername(), this.user.getPassword());
         pl.send(dos);
     }
 
-    public void register() throws IOException
+    protected void register() throws IOException
     {
         PacketRegister pr = new PacketRegister(user.getUsername(), user.getPassword());
         pr.send(dos);
     }
 
-    public void logout() throws IOException
+    protected void logout() throws IOException
     {
         PacketLogout pl = new PacketLogout();
         pl.sendOnlyType(dos);
@@ -338,19 +326,19 @@ public class Client
         this.loggedIn = false;
     }
 
-    public void addFriend(String friendName) throws IOException
+    protected void addFriend(String friendName) throws IOException
     {
         PacketAddFriend paf = new PacketAddFriend(user.getUsername(), friendName);
         paf.send(dos);
     }
 
-    public void removeFriend(String friendName) throws IOException
+    protected void removeFriend(String friendName) throws IOException
     {
         PacketRemoveFriend prf = new PacketRemoveFriend(user.getUsername(), friendName);
         prf.send(dos);
     }
 
-    public byte[] takeScreenshot() throws AWTException, IOException
+    protected byte[] takeScreenshot() throws AWTException, IOException
     {
         BufferedImage image = new Robot().createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize()));
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -358,18 +346,18 @@ public class Client
         return baos.toByteArray();
     }
 
-    public void askPermissionToConnect(String streamPartner) throws IOException
+    protected void askPermissionToConnect(String streamPartner) throws IOException
     {
         PacketConnectRequest pc = new PacketConnectRequest(user.getUsername(), streamPartner);
         pc.send(dos);
     }
 
-    public OutgoingStreamUI getOsui()
+    protected OutgoingStreamUI getOsui()
     {
         return osui;
     }
 
-    public void loginSuccessful(LoginUI lui)
+    protected void loginSuccessful(LoginUI lui)
     {
         log.info("Login Succeeded");
         JOptionPane.showMessageDialog(lui, "Logged In Successfully", "Login Attempt", INFORMATION_MESSAGE);
@@ -384,25 +372,25 @@ public class Client
         lui.dispose();
     }
 
-    public void loginFailed(LoginUI lui) throws IOException
+    protected void loginFailed(LoginUI lui) throws IOException
     {
         JOptionPane.showMessageDialog(lui, "Login Failed", "Login Attempt", ERROR_MESSAGE);
         log.info("Login Failed");
         ict.getDis().close();
     }
 
-    public void setOsui(OutgoingStreamUI osui)
+    protected void setOsui(OutgoingStreamUI osui)
     {
         this.osui = osui;
     }
 
-    public void stopStream() throws IOException
+    protected void stopStream() throws IOException
     {
         PacketStopStreaming pss = new PacketStopStreaming();
         pss.sendOnlyType(dos);
     }
 
-    public void resetToMainUI()
+    protected void resetToMainUI()
     {
         if (osui != null)
         {
@@ -417,7 +405,7 @@ public class Client
         }
     }
 
-    public void streamRequestAccepted(PacketConnectRequest pcr)
+    protected void streamRequestAccepted(PacketConnectRequest pcr)
     {
         // Do stuff if the stream is accepted
         //JOptionPane.showMessageDialog(mui, "Your Stream Request was Granted");

@@ -33,12 +33,12 @@ public final class Server
     // Misc Vars
     private Connection con;
     private LoginServer ls;
-    public static Vector<User> users = new Vector<>();
-    public static Vector<ClientHandler> clientHandlers = new Vector<>();
+    protected volatile static Vector<User> users = new Vector<>();
+    protected volatile static Vector<ClientHandler> clientHandlers = new Vector<>();
     private CertificateHandler ch;
 
     // paramaterized constructor
-    public Server() throws ClassNotFoundException, SQLException, UnknownHostException, FileNotFoundException, Exception
+    protected Server() throws ClassNotFoundException, SQLException, UnknownHostException, FileNotFoundException, Exception
     {
         ConfigParser cp;
         try
@@ -91,35 +91,35 @@ public final class Server
         }
     }
 
-    public CertificateHandler getCertificateHandler()
+    protected CertificateHandler getCertificateHandler()
     {
         return ch;
     }
 
     // Mutators
-    public void setSERVER_IP(InetAddress SERVER_IP)
+    protected void setSERVER_IP(InetAddress SERVER_IP)
     {
         this.SERVER_IP = SERVER_IP;
     }
 
-    public void setSERVER_PORT(int SERVER_PORT)
+    protected void setSERVER_PORT(int SERVER_PORT)
     {
         this.SERVER_PORT = SERVER_PORT;
     }
 
     // Accessors
-    public InetAddress getSERVER_IP()
+    protected InetAddress getSERVER_IP()
     {
         return SERVER_IP;
     }
 
-    public int getSERVER_PORT()
+    protected int getSERVER_PORT()
     {
         return SERVER_PORT;
     }
 
     // Methods
-    public Connection getDatabaseConnection() throws ClassNotFoundException, SQLException
+    protected Connection getDatabaseConnection() throws ClassNotFoundException, SQLException
     {
         Connection dbCon;
 
@@ -129,12 +129,12 @@ public final class Server
         return dbCon;
     }
 
-    public void refreshDatabaseConnection() throws ClassNotFoundException, SQLException
+    protected void refreshDatabaseConnection() throws ClassNotFoundException, SQLException
     {
         this.con = getDatabaseConnection();
     }
 
-    public boolean databaseExists()
+    protected boolean databaseExists()
     {
         try
         {
@@ -148,7 +148,7 @@ public final class Server
         }
     }
 
-    public void createDatabase() throws SQLException
+    protected void createDatabase() throws SQLException
     {
         // Define SQL
         String usersTable = "CREATE TABLE IF NOT EXISTS USERS (\n"
@@ -202,7 +202,7 @@ public final class Server
 
     }
 
-    public void clearDatabase() throws SQLException
+    protected void clearDatabase() throws SQLException
     {
         String removeUsersTableSQL = "DROP TABLE IF EXISTS USERS";
         String removeFriendsTableSQL = "DROP TABLE IF EXISTS friends";
@@ -218,7 +218,7 @@ public final class Server
         con.close();
     }
 
-    public boolean register(User user) throws SQLException
+    protected boolean register(User user) throws SQLException
     {
         String username = user.getUsername();
         String pword = user.getPassword();
@@ -252,7 +252,7 @@ public final class Server
 
     }
 
-    public boolean login(User user) throws SQLException, InterruptedException
+    protected boolean login(User user) throws SQLException, InterruptedException
     {
         String query = "SELECT 1 FROM USERS WHERE EXISTS (SELECT * FROM USERS WHERE username=\'" + user.getUsername() + "\' AND pword=\'" + user.getPassword() + "\');";
         PreparedStatement stmt = con.prepareStatement(query);
@@ -331,7 +331,7 @@ public final class Server
         return conf;
     }
 
-    public void logout(User user) throws SQLException, InterruptedException, IOException
+    protected void logout(User user) throws SQLException, InterruptedException, IOException
     {
         // Update DB to show logged out user
         String query = "UPDATE USERS SET loggedin=0 WHERE username=\'" + user.getUsername() + "\'";
@@ -357,7 +357,7 @@ public final class Server
         ServerMain.LOG.log(Level.INFO, "{0} logged out", user.getUsername());
     }
 
-    public String[] getLoggedInUsers()
+    protected String[] getLoggedInUsers()
     {
         String[] usernames = new String[clientHandlers.size()];
 
@@ -371,7 +371,7 @@ public final class Server
         return usernames;
     }
 
-    public void logoutAllUsers() throws SQLException, IOException
+    protected void logoutAllUsers() throws SQLException, IOException
     {
         // Close all the sockets for the active users
         for (ClientHandler c : clientHandlers)
@@ -390,7 +390,7 @@ public final class Server
         clientHandlers.clear();
     }
 
-    public String[] getFriends(User user) throws SQLException
+    protected String[] getFriends(User user) throws SQLException
     {
         String query = "SELECT id FROM USERS WHERE username=\'" + user.getUsername() + "\'";
         PreparedStatement stmt = con.prepareStatement(query);
@@ -431,7 +431,7 @@ public final class Server
         return friends;
     }
 
-    public void killServer() throws IOException, SQLException, InterruptedException
+    protected void killServer() throws IOException, SQLException, InterruptedException
     {
         // logout all users
         logoutAllUsers();
@@ -450,7 +450,7 @@ public final class Server
         ServerMain.LOG.info("Server Shutdown");
     }
 
-    public boolean addFriend(String username, String friendName)
+    protected boolean addFriend(String username, String friendName)
     {
         try
         {
@@ -520,7 +520,7 @@ public final class Server
         }
     }
 
-    public boolean removeFriend(String user, String friendName) throws SQLException
+    protected boolean removeFriend(String user, String friendName) throws SQLException
     {
         // get id of user and friend
         String query = "SELECT id FROM USERS WHERE username=\'" + user + "\' OR username=\'" + friendName + "\'";
@@ -560,7 +560,7 @@ public final class Server
         }
     }
 
-    public void restartLoginServer() throws BindException, UnknownHostException, IOException, SQLException, InterruptedException
+    protected void restartLoginServer() throws BindException, UnknownHostException, IOException, SQLException, InterruptedException
     {
         logoutAllUsers();
 
@@ -573,7 +573,7 @@ public final class Server
         startLoginServer();
     }
 
-    public void startLoginServer() throws BindException, UnknownHostException, IOException
+    protected void startLoginServer() throws BindException, UnknownHostException, IOException
     {
         try
         {

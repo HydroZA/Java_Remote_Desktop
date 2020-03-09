@@ -33,17 +33,17 @@ public class ClientHandler implements Runnable
         this.server = server;
     }
 
-    public User getUser()
+    protected User getUser()
     {
         return this.user;
     }
 
-    public DataInputStream getDis()
+    protected DataInputStream getDis()
     {
         return dis;
     }
 
-    public Socket getSocket()
+    protected Socket getSocket()
     {
         return s;
     }

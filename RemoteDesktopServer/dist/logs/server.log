@@ -1,10 +1,10 @@
-Mar 09, 2020 10:28:22 AM rdp.Server <init>
+Mar 09, 2020 11:48:04 AM rdp.Server <init>
 INFO: Found Config File
-Mar 09, 2020 10:28:22 AM rdp.Server <init>
+Mar 09, 2020 11:48:04 AM rdp.Server <init>
 INFO: TLS Certificate Found
-Mar 09, 2020 10:28:22 AM rdp.Server <init>
+Mar 09, 2020 11:48:04 AM rdp.Server <init>
 INFO: rdp.CertificateHandler@4f3f5b24
-Mar 09, 2020 10:28:22 AM rdp.ServerMain main
+Mar 09, 2020 11:48:05 AM rdp.ServerMain main
 INFO: 
 Select an action:
 	1) Start Server
@@ -15,11 +15,11 @@ Select an action:
 	6) Print Active Clients
 	7) Exit
 
-Mar 09, 2020 10:28:24 AM rdp.ServerMain main
+Mar 09, 2020 11:48:06 AM rdp.ServerMain main
 INFO: Starting Server...
-Mar 09, 2020 10:28:24 AM rdp.ServerMain main
+Mar 09, 2020 11:48:06 AM rdp.ServerMain main
 INFO: Server started on IP: 127.0.0.1, Port: 1234
-Mar 09, 2020 10:28:24 AM rdp.ServerMain main
+Mar 09, 2020 11:48:06 AM rdp.ServerMain main
 INFO: 
 Select an action:
 	1) Start Server
@@ -30,7 +30,11 @@ Select an action:
 	6) Print Active Clients
 	7) Exit
 
-Mar 09, 2020 10:28:26 AM rdp.LoginServer lambda$run$0
+Mar 09, 2020 11:48:13 AM rdp.LoginServer performCertificateExchange
+INFO: Incoming connection: /127.0.0.1
+Mar 09, 2020 11:48:13 AM rdp.LoginServer run
+INFO: Certificate Exchange Successful
+Mar 09, 2020 11:48:13 AM rdp.LoginServer lambda$run$0
 INFO: 
 *********** SECURE CONNECTION ESTABLISHED ***********
 Client IP: /127.0.0.1
@@ -38,13 +42,13 @@ Security Protocol: TLSv1.2
 Cipher Suite: TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
 ************ END SECURE CONNECTION STATS ************
 
-Mar 09, 2020 10:28:31 AM rdp.LoginServer run
-INFO: Successful login to account 'hydro' by 48e68bf[TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384: Socket[addr=/127.0.0.1,port=50141,localport=1234]]
-Mar 09, 2020 10:28:34 AM rdp.Server logout
-INFO: hydro logged out
-Mar 09, 2020 10:28:45 AM rdp.ServerMain main
+Mar 09, 2020 12:06:49 PM rdp.LoginServer run
+SEVERE: Socket exception in LoginServer
+Mar 09, 2020 12:06:49 PM rdp.LoginServer run
+SEVERE: Socket exception in LoginServer
+Mar 09, 2020 12:27:13 PM rdp.ServerMain main
 WARNING: Please choose a valid option
-Mar 09, 2020 10:28:45 AM rdp.ServerMain main
+Mar 09, 2020 12:27:13 PM rdp.ServerMain main
 INFO: 
 Select an action:
 	1) Start Server
@@ -55,7 +59,3 @@ Select an action:
 	6) Print Active Clients
 	7) Exit
 
-Mar 09, 2020 10:28:45 AM rdp.LoginServer run
-SEVERE: Socket exception in LoginServer
-Mar 09, 2020 10:28:45 AM rdp.Server killServer
-INFO: Server Shutdown
