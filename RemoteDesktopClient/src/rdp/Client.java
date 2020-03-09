@@ -45,7 +45,6 @@ public class Client
     private SSLSocket sock;
     private InetAddress SERVER_IP;
     private int SERVER_PORT;
-    private final String TLS_VERSION = "TLSv1.2";
     private final String TRUST_STORE_NAME;
     private final char[] TRUST_STORE_PWD;
     private final String KEY_STORE_NAME;
@@ -198,26 +197,10 @@ public class Client
         return handshakeSuccessful;
     }
 
-    public void connect(LoginUI lui) throws SSLHandshakeException,
-            FileNotFoundException,
-            NoSuchAlgorithmException,
-            IOException,
-            KeyStoreException,
-            CertificateException,
-            UnrecoverableKeyException,
-            KeyManagementException
+    public void connect(LoginUI lui) throws Exception
     {
         // Connect to server
-        SSLSocketConnector ssc = new SSLSocketConnector();
-
-        sock = ssc.connect(SERVER_IP,
-                SERVER_PORT,
-                TLS_VERSION,
-                TRUST_STORE_NAME,
-                TRUST_STORE_PWD,
-                KEY_STORE_NAME,
-                KEY_STORE_PWD
-        );
+        sock = SSLSocketConnector.connect(ch);
 
         dis = new DataInputStream(sock.getInputStream());
         dos = new DataOutputStream(sock.getOutputStream());
@@ -266,8 +249,8 @@ public class Client
 
                     Client.log.warning("Connection failed, retrying in 100ms...");
                 }
-                Client.log.severe("Unable to connect to server. Exiting...");
-                System.exit(1);
+                Client.log.severe("Unable to connect to server");
+                throw new Exception("Connection to server could not be made");
             }
             catch (Exception ex)
             {

@@ -29,7 +29,6 @@ public final class Server
     private final String KEY_STORE_NAME;
     private final char[] KEY_STORE_PWD;
     private final String CERTIFICATE;
-    private String TLS_VERSION = "TLSv1.2";
 
     // Misc Vars
     private Connection con;
@@ -241,13 +240,13 @@ public final class Server
             {
                 stmt2.execute();
             }
-            ServerMain.LOG.info("Created new user: " + username);
+            ServerMain.LOG.log(Level.INFO, "Created new user: {0}", username);
             return true;
         }
         else
         {
             // Username already exists
-            ServerMain.LOG.info(": Failed to create new user using name: " + username);
+            ServerMain.LOG.log(Level.SEVERE, ": Failed to create new user using name: {0}", username);
             return false;
         }
 
@@ -556,7 +555,7 @@ public final class Server
             PreparedStatement stmt3 = con.prepareStatement(query);
             stmt3.execute();
 
-            ServerMain.LOG.info("\'" + user + "\' removed \'" + friendName + "\' as a friend");
+            ServerMain.LOG.log(Level.INFO, "''{0}'' removed ''{1}'' as a friend", new Object[]{user, friendName});
             return true;
         }
     }
@@ -576,18 +575,9 @@ public final class Server
 
     public void startLoginServer() throws BindException, UnknownHostException, IOException
     {
-        SSLSocketCreator tlsS = new SSLSocketCreator();
-
         try
         {
-            ss = tlsS.getSecureServerSocket(
-                    SERVER_IP,
-                    SERVER_PORT,
-                    TLS_VERSION,
-                    TRUST_STORE_NAME,
-                    TRUST_STORE_PWD,
-                    KEY_STORE_NAME,
-                    KEY_STORE_PWD);
+            ss = SSLSocketCreator.getSecureServerSocket(ch);
         }
 
         catch (Exception e)

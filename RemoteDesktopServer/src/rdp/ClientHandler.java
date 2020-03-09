@@ -15,7 +15,6 @@ import java.util.logging.Level;
 
 public class ClientHandler implements Runnable
 {
-
     private final User user;
     private final Socket s;
     private final DataInputStream dis;

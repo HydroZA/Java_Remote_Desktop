@@ -11,18 +11,9 @@ package rdp;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
-import java.security.KeyManagementException;
 import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
-import java.util.Objects;
-
 import javax.net.SocketFactory;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -32,50 +23,15 @@ import javax.net.ssl.TrustManagerFactory;
 
 public class SSLSocketConnector
 {
-    public SSLSocketConnector()
+    public static SSLSocket connect(CertificateHandler ch) throws Exception
     {
-        
-    }
-    public SSLSocket connect(
-            InetAddress serverHost, 
-            int serverPort,
-            String tlsVersion, 
-            String trustStoreName, 
-            char[] trustStorePassword,
-            String keyStoreName, 
-            char[] keyStorePassword) 
-            throws 
-                FileNotFoundException, 
-                NoSuchAlgorithmException, 
-                IOException, 
-                KeyStoreException, 
-                CertificateException, 
-                UnrecoverableKeyException, 
-                KeyManagementException
-    {
-
-        Objects.requireNonNull(tlsVersion, "TLS version is mandatory");
-        Objects.requireNonNull(serverHost, "Server host cannot be null");
-
-        trustStoreName = "certs/" + trustStoreName + ".jks";
-        keyStoreName = "certs/" + keyStoreName + ".jks";
-        
-        if (serverPort <= 0)
-        {
-            throw new IllegalArgumentException(
-                    "Server port cannot be lesss than or equal to 0");
-        }
-
-        File ts = new File(trustStoreName);
-        if (!ts.exists())
-        {
-            throw new FileNotFoundException("File Not Found");
-        }
-        File ks = new File(keyStoreName);
-        if (!ks.exists())
-        {
-            throw new FileNotFoundException("File Not Found");
-        }
+        final String tlsVersion = "TLSv1.2";
+        final String serverHost = ch.getSERVER_IP();
+        final int serverPort = 1234;
+        final File ts =ch.getTrustStore();
+        final File ks = ch.getKeystore();
+        final char[] trustStorePassword = ch.getTRUST_STORE_PWD().toCharArray();
+        final char[] keyStorePassword = ch.getKEY_STORE_PWD().toCharArray();
 
         KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
         InputStream tstore = new FileInputStream(ts);

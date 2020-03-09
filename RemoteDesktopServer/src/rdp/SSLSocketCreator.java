@@ -10,13 +10,10 @@ package rdp;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.security.KeyStore;
 import java.security.SecureRandom;
-import java.util.Objects;
-
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
@@ -28,39 +25,31 @@ import javax.net.ssl.TrustManagerFactory;
  */
 public class SSLSocketCreator
 {
-    public SSLSocketCreator()
-    {
-        
-    }
-    public SSLServerSocket getSecureServerSocket(InetAddress ip, int port, String tlsVersion, String trustStoreName,
-            char[] trustStorePassword, String keyStoreName, char[] keyStorePassword)
-            throws Exception
-    {
 
-        Objects.requireNonNull(tlsVersion, "TLS version is mandatory");
-        
-        if (port <= 0)
-        {
-            throw new IllegalArgumentException(
-                    "Port number cannot be less than or equal to 0");
-        }
-
-        File ts = new File("certs/" + trustStoreName + ".jks");
-        if (!ts.exists())
-        {
-            throw new FileNotFoundException("File Not Found");
-        }
-        File ks = new File("certs/" + keyStoreName + ".jks");
-        if (!ks.exists())
-        {
-            throw new FileNotFoundException("File Not Found");
-        }
+    /**
+     * This class is used to return a SSLServerSocket based on the information
+     * contained in a CertificateHandler object. It is in its own class for 
+     * clarity sake.
+     * @param ch CertificateHandler object containing all the information on
+     * the certificate and keystore files
+     * @return SSLServerSocket using the provided certificate and keystore
+     * @throws Exception Many exceptions are thrown so generic Exception is used
+     */
+    public static SSLServerSocket getSecureServerSocket(CertificateHandler ch) throws Exception
+    {
+        final String tlsVersion = "TLSv1.2";
+        final InetAddress ip = InetAddress.getByName(ch.getSERVER_IP());
+        final int port = 1234;
+        final File ts = ch.getTrustStore();
+        final File ks = ch.getKeystore();
+        final char[] trustStorePassword = ch.getTRUST_STORE_PWD().toCharArray();
+        final char[] keyStorePassword = ch.getKEY_STORE_PWD().toCharArray();
 
         KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
-        InputStream tstore =  new FileInputStream(ts);
-        
-        trustStore.load(tstore, trustStorePassword);
-        tstore.close();
+        try (InputStream tstore = new FileInputStream(ts))
+        {
+            trustStore.load(tstore, trustStorePassword);
+        }
         TrustManagerFactory tmf = TrustManagerFactory
                 .getInstance(TrustManagerFactory.getDefaultAlgorithm());
         tmf.init(trustStore);
@@ -76,11 +65,7 @@ public class SSLSocketCreator
                 SecureRandom.getInstanceStrong());
         
         SSLServerSocketFactory factory = ctx.getServerSocketFactory();
-        
-        
-        //
         SSLServerSocket sslss = (SSLServerSocket) factory.createServerSocket(port, 50, ip);
-        //
         
         sslss.setEnabledProtocols(new String[]
         {
