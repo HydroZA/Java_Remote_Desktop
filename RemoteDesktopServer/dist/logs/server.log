@@ -1,20 +1,20 @@
-Mar 09, 2020 4:43:12 PM rdp.Server <init>
+Mar 14, 2020 2:25:37 PM rdp.Server <init>
 WARNING: Config File not Found
-Mar 09, 2020 4:43:12 PM rdp.Server <init>
+Mar 14, 2020 2:25:37 PM rdp.Server <init>
 INFO: Creating Config File...
-Mar 09, 2020 4:43:12 PM rdp.Server <init>
+Mar 14, 2020 2:25:37 PM rdp.Server <init>
 INFO: Created Config File
-Mar 09, 2020 4:43:12 PM rdp.Server <init>
+Mar 14, 2020 2:25:37 PM rdp.Server <init>
 WARNING: TLS Certificate Not Found, Generating...
-Mar 09, 2020 4:43:15 PM rdp.Server <init>
+Mar 14, 2020 2:25:40 PM rdp.Server <init>
 INFO: Generated TLS Certificate
-Mar 09, 2020 4:43:15 PM rdp.Server <init>
+Mar 14, 2020 2:25:40 PM rdp.Server <init>
 INFO: rdp.CertificateHandler@69d0a921
-Mar 09, 2020 4:43:15 PM rdp.Server <init>
+Mar 14, 2020 2:25:40 PM rdp.Server <init>
 INFO: Creating Database...
-Mar 09, 2020 4:43:15 PM rdp.Server <init>
+Mar 14, 2020 2:25:40 PM rdp.Server <init>
 INFO: Database Created
-Mar 09, 2020 4:43:15 PM rdp.ServerMain main
+Mar 14, 2020 2:25:40 PM rdp.ServerMain main
 INFO: 
 Select an action:
 	1) Start Server
@@ -25,13 +25,13 @@ Select an action:
 	6) Print Active Clients
 	7) Exit
 
-Mar 09, 2020 4:43:16 PM rdp.ServerMain main
+Mar 14, 2020 2:25:42 PM rdp.ServerMain main
 INFO: Starting Server...
-Mar 09, 2020 4:43:16 PM rdp.LoginServer run
+Mar 14, 2020 2:25:42 PM rdp.LoginServer run
 INFO: LoginServer Started
-Mar 09, 2020 4:43:16 PM rdp.ServerMain main
+Mar 14, 2020 2:25:42 PM rdp.ServerMain main
 INFO: Server started on IP: 127.0.0.1, Port: 1234
-Mar 09, 2020 4:43:16 PM rdp.ServerMain main
+Mar 14, 2020 2:25:42 PM rdp.ServerMain main
 INFO: 
 Select an action:
 	1) Start Server
@@ -42,17 +42,17 @@ Select an action:
 	6) Print Active Clients
 	7) Exit
 
-Mar 09, 2020 4:43:22 PM rdp.LoginServer run
+Mar 14, 2020 2:26:10 PM rdp.LoginServer run
 INFO: Attempting a Certificate Exchange
-Mar 09, 2020 4:43:22 PM rdp.LoginServer performCertificateExchange
+Mar 14, 2020 2:26:10 PM rdp.LoginServer performCertificateExchange
 INFO: Incoming connection: /127.0.0.1
-Mar 09, 2020 4:43:22 PM rdp.LoginServer run
+Mar 14, 2020 2:26:10 PM rdp.LoginServer run
 INFO: Certificate Exchange Successful
-Mar 09, 2020 4:43:22 PM rdp.LoginServer run
+Mar 14, 2020 2:26:10 PM rdp.LoginServer run
 INFO: LoginServer Started
-Mar 09, 2020 4:43:22 PM rdp.LoginServer run
+Mar 14, 2020 2:26:10 PM rdp.LoginServer run
 WARNING: LoginServer Closed
-Mar 09, 2020 4:43:22 PM rdp.LoginServer lambda$run$0
+Mar 14, 2020 2:26:10 PM rdp.LoginServer lambda$run$0
 INFO: 
 *********** SECURE CONNECTION ESTABLISHED ***********
 Client IP: /127.0.0.1
@@ -60,69 +60,24 @@ Security Protocol: TLSv1.2
 Cipher Suite: TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
 ************ END SECURE CONNECTION STATS ************
 
-Mar 09, 2020 4:44:41 PM rdp.LoginServer run
-WARNING: Login thread got invalid packet type
-Mar 09, 2020 4:45:01 PM rdp.LoginServer run
-INFO: Attempting a Certificate Exchange
-Mar 09, 2020 4:45:01 PM rdp.LoginServer performCertificateExchange
-INFO: Incoming connection: /127.0.0.1
-Mar 09, 2020 4:45:01 PM rdp.LoginServer run
-INFO: Certificate Exchange Successful
-Mar 09, 2020 4:45:01 PM rdp.LoginServer run
-INFO: LoginServer Started
-Mar 09, 2020 4:45:01 PM rdp.LoginServer run
-WARNING: LoginServer Closed
-Mar 09, 2020 4:45:01 PM rdp.LoginServer lambda$run$0
+Mar 14, 2020 2:59:33 PM rdp.ServerMain main
+WARNING: Please choose a valid option
+Mar 14, 2020 2:59:33 PM rdp.ServerMain main
 INFO: 
-*********** SECURE CONNECTION ESTABLISHED ***********
-Client IP: /127.0.0.1
-Security Protocol: TLSv1.2
-Cipher Suite: TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
-************ END SECURE CONNECTION STATS ************
+Select an action:
+	1) Start Server
+	2) Change IP and Port
+	3) Restart Server
+	4) Stop Server
+	5) Recreate Database
+	6) Print Active Clients
+	7) Exit
 
-Mar 09, 2020 4:45:05 PM rdp.LoginServer run
-WARNING: Failed login by 2845639a[TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384: Socket[addr=/127.0.0.1,port=55323,localport=1234]]
-Mar 09, 2020 4:47:48 PM rdp.LoginServer run
-INFO: Attempting a Certificate Exchange
-Mar 09, 2020 4:47:48 PM rdp.LoginServer performCertificateExchange
-INFO: Incoming connection: /127.0.0.1
-Mar 09, 2020 4:47:48 PM rdp.LoginServer run
-INFO: Certificate Exchange Successful
-Mar 09, 2020 4:47:48 PM rdp.LoginServer run
-INFO: LoginServer Started
-Mar 09, 2020 4:47:48 PM rdp.LoginServer run
+Mar 14, 2020 2:59:33 PM rdp.Server killServer
+INFO: Server Shutdown
+Mar 14, 2020 2:59:33 PM rdp.LoginServer run
+SEVERE: Socket exception in LoginServer
+Mar 14, 2020 2:59:33 PM rdp.LoginServer run
+INFO: java.net.SocketException: socket closed
+Mar 14, 2020 2:59:33 PM rdp.LoginServer run
 WARNING: LoginServer Closed
-Mar 09, 2020 4:47:48 PM rdp.LoginServer lambda$run$0
-INFO: 
-*********** SECURE CONNECTION ESTABLISHED ***********
-Client IP: /127.0.0.1
-Security Protocol: TLSv1.2
-Cipher Suite: TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
-************ END SECURE CONNECTION STATS ************
-
-Mar 09, 2020 4:47:50 PM rdp.LoginServer run
-WARNING: Failed login by 5eaf395a[TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384: Socket[addr=/127.0.0.1,port=55369,localport=1234]]
-Mar 09, 2020 4:48:52 PM rdp.LoginServer run
-INFO: Attempting a Certificate Exchange
-Mar 09, 2020 4:48:52 PM rdp.LoginServer performCertificateExchange
-INFO: Incoming connection: /127.0.0.1
-Mar 09, 2020 4:48:52 PM rdp.LoginServer run
-INFO: Certificate Exchange Successful
-Mar 09, 2020 4:48:52 PM rdp.LoginServer run
-INFO: LoginServer Started
-Mar 09, 2020 4:48:52 PM rdp.LoginServer run
-WARNING: LoginServer Closed
-Mar 09, 2020 4:48:52 PM rdp.LoginServer lambda$run$0
-INFO: 
-*********** SECURE CONNECTION ESTABLISHED ***********
-Client IP: /127.0.0.1
-Security Protocol: TLSv1.2
-Cipher Suite: TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
-************ END SECURE CONNECTION STATS ************
-
-Mar 09, 2020 4:48:57 PM rdp.LoginServer run
-INFO: Successful login to account 'hydro' by 5d2f7338[TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384: Socket[addr=/127.0.0.1,port=55450,localport=1234]]
-Mar 09, 2020 4:49:03 PM rdp.ClientHandler run
-SEVERE: Closing ClientHandler thread for user: hydro
-Mar 09, 2020 4:49:03 PM rdp.Server logout
-INFO: hydro logged out

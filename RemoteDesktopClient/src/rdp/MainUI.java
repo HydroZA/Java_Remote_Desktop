@@ -294,6 +294,7 @@ public class MainUI extends javax.swing.JFrame
         try
         {
             client.disconnect();
+            client.setLoggedIn(false);
             LoginUI lui = new LoginUI(client);
             lui.setVisible(true);
             client.connect(lui);

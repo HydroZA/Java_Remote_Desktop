@@ -36,6 +36,7 @@ public class ClientMain
 
             Client.log.info("Waiting for handshake with server to complete...");
             
+            // Show the login interface
             lui.setVisible(true);
         }
         catch (IOException | KeyManagementException | KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException | CertificateException ex)

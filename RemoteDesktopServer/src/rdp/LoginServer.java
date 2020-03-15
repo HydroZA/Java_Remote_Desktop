@@ -16,14 +16,11 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.file.Files;
-import java.sql.SQLException;
 import java.util.logging.Level;
 import javax.net.ssl.HandshakeCompletedEvent;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
-import static rdp.Server.clientHandlers;
-import static rdp.Server.users;
 
 public class LoginServer implements Runnable
 {
@@ -103,81 +100,23 @@ public class LoginServer implements Runnable
                             + "Cipher Suite: " + s.getSession().getCipherSuite() + "\n"
                             + "************ END SECURE CONNECTION STATS ************\n"
                     );
+                    try
+                    {
+                        DataInputStream dis = new DataInputStream(s.getInputStream());
+                        DataOutputStream dos = new DataOutputStream(s.getOutputStream());
+
+                        //Handoff client to a LoginSession thread so we can continue listening
+                        LoginSession ls = new LoginSession(server, dis, dos, s);
+                        Thread t = new Thread(ls);
+                        t.start();
+                    }
+                    catch (IOException e)
+                    {
+                        ServerMain.LOG.log(Level.SEVERE, "Failure while getting datastreams for socket: {0}", s);
+                    }
                 });
 
                 s.startHandshake();
-
-                DataInputStream dis = new DataInputStream(s.getInputStream());
-                DataOutputStream dos = new DataOutputStream(s.getOutputStream());
-
-                Packet.Type tp = Packet.Type.values()[dis.readInt()];
-
-                switch (tp)
-                {
-                    case LOGIN:
-                    {
-                        PacketLogin pl = new PacketLogin().deserialize(dis);
-                        User user = pl.getUser();
-
-                        boolean isSuccess = server.login(user);
-                        PacketStatus ps = new PacketStatus();
-                        ps.setSuccess(isSuccess);
-                        if (isSuccess)
-                        {
-                            ps.setMessage("Sucessfully logged in");
-                            ps.send(dos);
-                            String[] friends = server.getFriends(user);
-                            PacketFriends pf = new PacketFriends(friends);
-                            pf.send(dos);
-                            user.setFriends(friends);
-
-                            users.add(user);
-                            ClientHandler ch = new ClientHandler(server, s, user, dis, dos);
-                            Thread t = new Thread(ch);
-                            clientHandlers.add(ch);
-                            t.start();
-
-                            ServerMain.LOG.info("Successful login to account \'" + user.getUsername() + "\' by " + s);
-                        }
-                        else
-                        {
-                            ps.setMessage("Invalid Login Credentials");
-                            ps.send(dos);
-                            ServerMain.LOG.warning("Failed login by " + s);
-                        }
-                        break;
-                    }
-                    case REGISTER:
-                    {
-                        PacketRegister pr = new PacketRegister().deserialize(dis);
-
-                        boolean isSuccess = server.register(pr.getUser());
-                        PacketStatus ps = new PacketStatus();
-                        ps.setSuccess(isSuccess);
-
-                        if (isSuccess)
-                        {
-                            ps.setMessage("Registered Successfully");
-                        }
-                        else
-                        {
-                            ps.setMessage("Failed to Register");
-                        }
-                        ps.send(dos);
-                        break;
-                    }
-                    case CANCEL_LOGIN:
-                    {
-                        ServerMain.LOG.log(Level.INFO, "Client cancelled login atttempt: {0}", s.toString());
-                        s.close();
-                        continue;
-                    }
-                    default:
-                    {
-                        // Ignore the packet as it's not meant for this thread
-                        ServerMain.LOG.warning("Login thread got invalid packet type");
-                    }
-                }
             }
             catch (SSLHandshakeException e)
             {
@@ -203,13 +142,13 @@ public class LoginServer implements Runnable
                 break;
             }
 
-            catch (IOException | InterruptedException | SQLException e)
+            catch (IOException e)
             {
                 ServerMain.LOG.severe(e.toString());
                 break;
             }
         }
+
         ServerMain.LOG.warning("LoginServer Closed");
     }
-
 }

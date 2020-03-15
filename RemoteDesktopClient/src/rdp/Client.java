@@ -194,16 +194,17 @@ public final class Client
 
     protected void connect(LoginUI lui) throws Exception
     {
-
-        for (int i = 0; i <= 3; i++)
+        int sleepTimer = 100;
+        for (int i = 0; i <= 4; i++)
         {
-            /*Sleep for an exponentially longer time each loop, starting at 0ms
+            /*Sleep for a longer time each loop, starting at 100ms
             * This is to allow the server time to restart after adding our 
             * certificate
             */
-            int sleepTimer = (int) Math.floor(Math.pow(100, i) - 1);
+            
             Thread.sleep(sleepTimer);
-
+            sleepTimer = sleepTimer * 2;
+            
             // Connect to server
             sock = SSLSocketConnector.connect(ch);
 

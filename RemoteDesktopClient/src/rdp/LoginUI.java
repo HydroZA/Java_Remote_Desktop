@@ -59,6 +59,7 @@ public class LoginUI extends javax.swing.JFrame
                     try
                     {
                         new PacketCancelLogin().sendOnlyType(client.getDos());
+                        Client.log.info("Disconnected Safely");
                     }
                     catch (Exception ex)
                     {

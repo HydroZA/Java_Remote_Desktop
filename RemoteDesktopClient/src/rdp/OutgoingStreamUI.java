@@ -61,7 +61,6 @@ public class OutgoingStreamUI extends javax.swing.JFrame
             sw.start(); // Start the stop watch to get elapsed time
             while (!terminated)
             {
-                System.out.println(terminated);
                 try
                 {
                     byte[] img = client.takeScreenshot();
